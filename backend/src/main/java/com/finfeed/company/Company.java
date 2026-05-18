@@ -48,6 +48,7 @@ public class Company {
     public String getName() { return name; }
     public String getNameEn() { return nameEn; }
     public String getLogoUrl() { return logoUrl; }
+    public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }
     public String getRssUrl() { return rssUrl; }
     public String getSiteUrl() { return siteUrl; }
     public Sector getSector() { return sector; }

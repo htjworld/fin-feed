@@ -15,13 +15,17 @@ public class CrawlController {
 
     private final RssCrawlerService rssCrawlerService;
     private final CompanyRepository companyRepository;
+    private final LogoCrawlerService logoCrawlerService;
 
     @Value("${crawler.api-key}")
     private String apiKey;
 
-    public CrawlController(RssCrawlerService rssCrawlerService, CompanyRepository companyRepository) {
+    public CrawlController(RssCrawlerService rssCrawlerService,
+                           CompanyRepository companyRepository,
+                           LogoCrawlerService logoCrawlerService) {
         this.rssCrawlerService = rssCrawlerService;
         this.companyRepository = companyRepository;
+        this.logoCrawlerService = logoCrawlerService;
     }
 
     @PostMapping
@@ -66,6 +70,20 @@ public class CrawlController {
         return ResponseEntity.ok(Map.of(
                 "status", "success",
                 "repairedArticlesCount", repairedCount
+        ));
+    }
+
+    @PostMapping("/logos")
+    public ResponseEntity<Map<String, Object>> crawlLogos(
+            @RequestHeader("X-Crawler-Key") String key
+    ) {
+        if (!apiKey.equals(key)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        int logosCount = logoCrawlerService.crawlAllLogos();
+        return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "updatedLogosCount", logosCount
         ));
     }
 }

@@ -38,6 +38,7 @@ export default function CollectionCard({ collection, onOpen }: Props) {
         <div className="coll-preview">
           {previewArts.map((a, i) => {
             const co = COMPANY_BY_ID[a.company];
+            if (!co) return null;
             const grad = (THUMB_BG[co.sector] || ['#0E3B30', '#15554A']) as [string, string];
             return (
               <div

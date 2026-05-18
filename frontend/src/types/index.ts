@@ -12,6 +12,7 @@ export type Company = {
   sector: string;
   color: string;
   count: number;
+  logo_url?: string;
 };
 
 export type Category = {

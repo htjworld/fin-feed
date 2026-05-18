@@ -1,7 +1,8 @@
 'use client';
 import React from 'react';
 import type { Filters } from '@/types';
-import { SECTOR_BY_ID, COMPANY_BY_ID, CATEGORY_BY_ID } from '@/data';
+import { SECTOR_BY_ID, CATEGORY_BY_ID } from '@/data';
+import { useApp } from '@/context/AppContext';
 import { Ic } from './Icons';
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export default function ActiveFilters({ filters, setFilters, query, setQuery }: Props) {
+  const { companyById } = useApp();
   const items: { label: string; type: string; clear: () => void; color?: string }[] = [];
 
   if (filters.sector !== 'all') {
@@ -21,14 +23,17 @@ export default function ActiveFilters({ filters, setFilters, query, setQuery }: 
       clear: () => setFilters((f) => ({ ...f, sector: 'all' })),
     });
   }
-  filters.companies.forEach((cid) =>
-    items.push({
-      label: COMPANY_BY_ID[cid].name,
-      type: 'company',
-      clear: () => setFilters((f) => ({ ...f, companies: f.companies.filter((x) => x !== cid) })),
-      color: COMPANY_BY_ID[cid].color,
-    })
-  );
+  filters.companies.forEach((cid) => {
+    const c = companyById[cid];
+    if (c) {
+      items.push({
+        label: c.name,
+        type: 'company',
+        clear: () => setFilters((f) => ({ ...f, companies: f.companies.filter((x) => x !== cid) })),
+        color: c.color,
+      });
+    }
+  });
   filters.categories.forEach((cid) =>
     items.push({
       label: CATEGORY_BY_ID[cid].label,
