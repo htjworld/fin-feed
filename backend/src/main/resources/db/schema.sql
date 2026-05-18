@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS companies (
-    id         SERIAL PRIMARY KEY,
+    id         BIGSERIAL PRIMARY KEY,
     name       VARCHAR(100) NOT NULL,
     name_en    VARCHAR(100),
     logo_url   TEXT,
@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS companies (
 );
 
 CREATE TABLE IF NOT EXISTS articles (
-    id            SERIAL PRIMARY KEY,
-    company_id    INT REFERENCES companies (id),
+    id            BIGSERIAL PRIMARY KEY,
+    company_id    BIGINT REFERENCES companies (id),
     title         TEXT NOT NULL,
     url           TEXT UNIQUE NOT NULL,
     thumbnail_url TEXT,
@@ -34,7 +34,7 @@ CREATE OR REPLACE TRIGGER articles_search_update
 EXECUTE FUNCTION tsvector_update_trigger(search_vector, 'pg_catalog.simple', title, summary);
 
 CREATE TABLE IF NOT EXISTS crawl_logs (
-    id             SERIAL PRIMARY KEY,
+    id             BIGSERIAL PRIMARY KEY,
     company_id     INT REFERENCES companies (id),
     status         VARCHAR(20),
     articles_added INT DEFAULT 0,

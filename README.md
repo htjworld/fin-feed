@@ -10,9 +10,9 @@
 | 영역 | 상태 | 비고 |
 |------|------|------|
 | **프론트엔드** (Next.js) | ✅ MVP 완료 | 132개 유닛 테스트 통과 |
-| **백엔드** (Spring Boot) | 🔲 미착수 | RSS 파싱 API 예정 |
+| **백엔드** (Spring Boot) | ✅ MVP 완료 | REST API + RSS 크롤러 |
+| **DB 스키마** (Supabase) | ✅ 완료 | PostgreSQL FTS |
 | **RSS 크롤러** (GitHub Actions) | 🔲 미착수 | 6h 주기 예정 |
-| **DB 스키마** (Supabase) | 🔲 미착수 | PostgreSQL FTS 예정 |
 | **배포** (Vercel + Render) | 🔲 미착수 | — |
 
 ---
@@ -29,13 +29,14 @@
 | 테스트 | Jest 29 + React Testing Library |
 | 배포 | Vercel (예정) |
 
-### 백엔드 (예정)
+### 백엔드
 | 항목 | 선택 |
 |------|------|
-| 프레임워크 | Spring Boot 3.x (Java 21) |
+| 프레임워크 | Spring Boot 3.3 (Java 21) |
 | DB | Supabase PostgreSQL |
 | 검색 | PostgreSQL Full-Text Search |
-| 배포 | Render (무료) / Railway ($5, 부하 테스트 시) |
+| RSS 파싱 | Rome 2.1 |
+| 배포 | Render (예정) |
 
 ---
 
@@ -44,84 +45,133 @@
 ```
 fin-feed/
 ├── frontend/                   # Next.js 15 앱
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── layout.tsx
-│   │   │   ├── page.tsx
-│   │   │   └── globals.css     # 디자인 시스템 CSS
-│   │   ├── components/
-│   │   │   ├── FinFeedApp.tsx  # 메인 앱 (상태 · 레이아웃)
-│   │   │   ├── Header.tsx      # 검색 · ⌘K 자동완성
-│   │   │   ├── Sidebar.tsx     # 섹터 · 회사 · 카테고리 필터
-│   │   │   ├── ArticleCard.tsx # 카드 (grid / list 뷰)
-│   │   │   ├── Thumbnail.tsx   # 4단계 썸네일 폴백
-│   │   │   ├── ActiveFilters.tsx
-│   │   │   ├── CollectionCard.tsx
-│   │   │   ├── CollectionsSection.tsx
-│   │   │   ├── CollectionGlyphs.tsx
-│   │   │   ├── Icons.tsx
-│   │   │   └── utils.ts        # fmtDate · highlight · readableInk
-│   │   ├── data/
-│   │   │   └── index.ts        # 목업 데이터 (25개 회사, 24개 아티클)
-│   │   └── types/
-│   │       └── index.ts
-│   ├── jest.config.js
-│   ├── jest.setup.ts
-│   └── package.json
-├── backend/                    # Spring Boot (예정)
-├── .gitignore
+│   └── src/
+│       ├── app/
+│       ├── components/
+│       ├── data/               # 목업 데이터
+│       └── types/
+├── backend/                    # Spring Boot 앱
+│   ├── src/main/java/com/finfeed/
+│   │   ├── article/            # 아티클 API + 커서 페이지네이션
+│   │   ├── company/            # 회사 API
+│   │   ├── crawl/              # RSS 크롤러 + 스케줄러
+│   │   ├── common/             # Sector, Converter
+│   │   └── web/                # CORS, 헬스체크, 예외처리
+│   ├── src/main/resources/
+│   │   ├── application.yml
+│   │   ├── application-local.yml
+│   │   └── db/
+│   │       ├── schema.sql      # DB 스키마 (Supabase SQL Editor에서 실행)
+│   │       └── data.sql        # 초기 회사 데이터 25개
+│   └── .env.example
 └── README.md
 ```
 
 ---
 
-## 실행 방법
+## 백엔드 실행 방법
 
-### 프론트엔드
+### 1. 환경변수 설정
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+`backend/.env` 파일을 열어 값 입력:
+
+```env
+DATABASE_URL=jdbc:postgresql://db.<project-ref>.supabase.co:5432/postgres
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=your-database-password
+CRAWLER_API_KEY=your-secret-crawler-key
+```
+
+### 2. Supabase DB 초기화
+
+Supabase → SQL Editor에서 순서대로 실행:
+
+```
+backend/src/main/resources/db/schema.sql
+backend/src/main/resources/db/data.sql
+```
+
+### 3. 빌드 및 실행
+
+```powershell
+# 빌드
+cd backend
+mvn clean package -DskipTests
+
+# 환경변수 로드 후 실행 (PowerShell)
+Get-Content .env | ForEach-Object { $k,$v = $_ -split '=',2; [System.Environment]::SetEnvironmentVariable($k, $v) }
+java -jar target\finfeed-backend-0.0.1-SNAPSHOT.jar
+```
+
+### 4. 로컬 테스트 (H2 in-memory, DB 없이)
+
+```powershell
+java -jar target\finfeed-backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=local
+```
+
+---
+
+## API
+
+```
+GET  /api/articles                   아티클 목록 (cursor 페이지네이션)
+GET  /api/articles?sector=crypto     섹터 필터
+GET  /api/articles?companyId=1       회사 필터
+GET  /api/articles?q=블록체인         키워드 검색 (FTS)
+GET  /api/articles?tag=infra         태그 필터
+GET  /api/articles?cursor=...        다음 페이지
+GET  /api/companies                  회사 목록 + 아티클 수
+GET  /api/companies?sector=crypto    섹터별 회사
+GET  /health                         헬스체크
+POST /api/crawl                      전체 크롤링 트리거 (X-Crawler-Key 헤더 필요)
+POST /api/crawl/{companyId}          특정 회사 크롤링
+```
+
+### 응답 예시
+
+```json
+{
+  "articles": [
+    {
+      "id": 1,
+      "title": "업비트의 고가용성 아키텍처",
+      "url": "https://medium.com/두나무...",
+      "thumbnailUrl": "https://...",
+      "summary": "...",
+      "publishedAt": "2026-05-10T09:00:00",
+      "tags": ["blockchain", "infra"],
+      "company": {
+        "id": 5,
+        "name": "업비트",
+        "nameEn": "Upbit",
+        "logoUrl": null,
+        "sector": "crypto"
+      }
+    }
+  ],
+  "nextCursor": "MjAyNi0wNS0xMFQwOTowMDowMCwx",
+  "hasNext": true
+}
+```
+
+---
+
+## 프론트엔드 실행 방법
 
 ```bash
 cd frontend
 npm install
 npm run dev        # http://localhost:3000
 npm test           # 유닛 테스트 (132개)
-npm run build      # 프로덕션 빌드
 ```
 
 ---
 
-## 프론트엔드 주요 기능 (MVP)
-
-| 기능 | 구현 내용 |
-|------|-----------|
-| **아티클 피드** | 24개 카드 (grid 2열 / 3열 / list) |
-| **섹터 필터** | 은행 · 증권 · 핀테크 · 가상자산 · 해외 |
-| **회사 필터** | 25개 회사 체크박스 (섹터별 필터) |
-| **카테고리 필터** | 결제 · 보안 · 인프라 · AI 등 10개 |
-| **기간 필터** | 전체 / 7일 / 30일 / 3개월 |
-| **키워드 검색** | 인스턴트 필터 + 자동완성 드롭다운 (⌘K) |
-| **히어로 섹션** | pinned 아티클 + KPI 4개 |
-| **컬렉션** | 10개 테마별 큐레이션 (SVG 글리프) |
-| **썸네일 폴백** | 실사진 → 본문 이미지 → 로고 → 텍스트 SVG |
-| **뷰 전환** | Grid 2열 / 3열 / List |
-| **활성 필터 바** | 적용된 필터 pill + 개별 / 전체 지우기 |
-
----
-
-## API 설계 (백엔드 구현 예정)
-
-```
-GET /api/articles                   아티클 목록 (cursor 페이지네이션)
-GET /api/articles?sector=crypto     섹터 필터
-GET /api/articles?company=upbit     회사 필터
-GET /api/articles?q=블록체인         키워드 검색 (FTS)
-GET /api/articles?tag=security      태그 필터
-GET /api/companies                  회사 목록 + 아티클 수
-GET /health                         헬스체크 (UptimeRobot ping)
-```
-
----
-
-## 블로그 소스 (RSS 수집 예정)
+## 블로그 소스 (RSS 수집)
 
 | 섹터 | 회사 |
 |------|------|
