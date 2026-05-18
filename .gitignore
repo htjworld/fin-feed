@@ -74,3 +74,4 @@ yarn-error.log*
 .stylelintcache
 backend/.claude/
 backend/backend/
+small-town-research.md
