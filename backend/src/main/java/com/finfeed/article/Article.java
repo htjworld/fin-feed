@@ -2,8 +2,6 @@ package com.finfeed.article;
 
 import com.finfeed.company.Company;
 import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -38,8 +36,8 @@ public class Article {
     @Column(name = "crawled_at")
     private LocalDateTime crawledAt;
 
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(columnDefinition = "text[]")
+    @Convert(converter = com.finfeed.common.StringArrayConverter.class)
+    @Column(columnDefinition = "TEXT")
     private String[] tags;
 
     protected Article() {}

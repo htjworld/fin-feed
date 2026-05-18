@@ -32,9 +32,7 @@ management:
       show-details: never
 
 cors:
-  allowed-origins:
-    - http://localhost:3000
-    - ${FRONTEND_URL:https://finfeed.vercel.app}
+  allowed-origins: "http://localhost:3000,${FRONTEND_URL:https://finfeed.vercel.app}"
 
 crawler:
   api-key: ${CRAWLER_API_KEY:dev-key}

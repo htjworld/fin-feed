@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS articles (
     summary       TEXT,
     published_at  TIMESTAMP,
     crawled_at    TIMESTAMP DEFAULT NOW(),
-    tags          TEXT[],
+    tags          TEXT,
     search_vector TSVECTOR
 );
 

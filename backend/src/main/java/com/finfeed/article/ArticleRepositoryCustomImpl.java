@@ -5,6 +5,7 @@ import com.finfeed.article.dto.CursorPage;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +16,9 @@ class ArticleRepositoryCustomImpl implements ArticleRepositoryCustom {
 
     @PersistenceContext
     private EntityManager em;
+
+    @Value("${app.use-fts:true}")
+    private boolean useFts;
 
     @Override
     public List<Article> findWithFilter(ArticleFilter filter, CursorPage cursor) {
@@ -44,12 +48,17 @@ class ArticleRepositoryCustomImpl implements ArticleRepositoryCustom {
             params.put("companyId", filter.companyId());
         }
         if (filter.tag() != null) {
-            conditions.add(":tag = ANY(a.tags)");
-            params.put("tag", filter.tag());
+            conditions.add("(LOWER(a.tags) LIKE LOWER(:tagLike))");
+            params.put("tagLike", "%" + filter.tag() + "%");
         }
         if (filter.q() != null && !filter.q().isBlank()) {
-            conditions.add("a.search_vector @@ plainto_tsquery('simple', :q)");
-            params.put("q", filter.q().trim());
+            if (useFts) {
+                conditions.add("a.search_vector @@ plainto_tsquery('simple', :q)");
+                params.put("q", filter.q().trim());
+            } else {
+                conditions.add("(LOWER(a.title) LIKE LOWER(:qLike) OR LOWER(a.summary) LIKE LOWER(:qLike))");
+                params.put("qLike", "%" + filter.q().trim() + "%");
+            }
         }
         if (cursor.hasValue()) {
             conditions.add("(a.published_at < :cursorDate OR (a.published_at = :cursorDate AND a.id < :cursorId))");
