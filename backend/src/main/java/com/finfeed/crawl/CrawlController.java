@@ -54,4 +54,18 @@ public class CrawlController {
                 "failures", summary.failures()
         ));
     }
+
+    @PostMapping("/repair-thumbnails")
+    public ResponseEntity<Map<String, Object>> repairThumbnails(
+            @RequestHeader("X-Crawler-Key") String key
+    ) {
+        if (!apiKey.equals(key)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        int repairedCount = rssCrawlerService.repairMissingThumbnails();
+        return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "repairedArticlesCount", repairedCount
+        ));
+    }
 }

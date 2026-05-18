@@ -13,6 +13,10 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,12 +87,17 @@ public class RssCrawlerService {
         String url = entry.getLink();
         if (url == null || url.isBlank() || articleRepository.existsByUrl(url)) return false;
 
+        String thumbnail = extractThumbnail(entry);
+        if (thumbnail == null || thumbnail.isBlank()) {
+            thumbnail = fetchThumbnailFromHtml(url);
+        }
+
         Article article = Article.builder()
                 .company(company)
                 .title(sanitize(entry.getTitle()))
                 .url(url)
                 .summary(extractSummary(entry))
-                .thumbnailUrl(extractThumbnail(entry))
+                .thumbnailUrl(thumbnail)
                 .publishedAt(toLocalDateTime(entry))
                 .build();
 
@@ -139,6 +148,62 @@ public class RssCrawlerService {
             return entry.getUpdatedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         }
         return LocalDateTime.now();
+    }
+
+    private String fetchThumbnailFromHtml(String url) {
+        if (url == null || url.isBlank()) return null;
+        try {
+            Document doc = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .timeout(5000)
+                    .followRedirects(true)
+                    .get();
+
+            // 1. og:image
+            Element ogImage = doc.selectFirst("meta[property=og:image]");
+            if (ogImage != null) {
+                String content = ogImage.attr("content");
+                if (content != null && !content.isBlank()) {
+                    return content.trim();
+                }
+            }
+
+            // 2. twitter:image
+            Element twitterImage = doc.selectFirst("meta[name=twitter:image]");
+            if (twitterImage != null) {
+                String content = twitterImage.attr("content");
+                if (content != null && !content.isBlank()) {
+                    return content.trim();
+                }
+            }
+
+            // 3. Fallback: First high-quality image in the post body
+            Elements imgs = doc.select("article img, main img, .post img, .content img");
+            for (Element img : imgs) {
+                String src = img.absUrl("src");
+                if (src != null && !src.isBlank() && !src.contains("logo") && !src.contains("icon")) {
+                    return src;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch thumbnail from HTML for " + url + ": " + e.getMessage());
+        }
+        return null;
+    }
+
+    @Transactional
+    public int repairMissingThumbnails() {
+        List<Article> articles = articleRepository.findArticlesMissingThumbnails();
+        int count = 0;
+        for (Article article : articles) {
+            String thumbnail = fetchThumbnailFromHtml(article.getUrl());
+            if (thumbnail != null && !thumbnail.isBlank()) {
+                article.setThumbnailUrl(thumbnail);
+                articleRepository.save(article);
+                count++;
+            }
+        }
+        return count;
     }
 
     public record CrawlSummary(int articlesAdded, int failures) {

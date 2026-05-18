@@ -67,6 +67,8 @@ public class Article {
     public LocalDateTime getCrawledAt() { return crawledAt; }
     public String[] getTags() { return tags; }
 
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+
     public static final class Builder {
         private Company company;
         private String title;
