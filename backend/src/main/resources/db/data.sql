@@ -1,0 +1,28 @@
+INSERT INTO companies (name, name_en, rss_url, site_url, sector)
+VALUES
+    ('토스', 'Toss', 'https://toss.tech/rss.xml', 'https://toss.tech', 'domestic_fintech'),
+    ('카카오페이', 'KakaoPay', NULL, 'https://tech.kakaopay.com', 'domestic_fintech'),
+    ('네이버페이', 'NaverPay', NULL, 'https://pay.naver.com', 'domestic_fintech'),
+    ('뱅크샐러드', 'Banksalad', 'https://blog.banksalad.com/tech/rss', 'https://blog.banksalad.com', 'domestic_fintech'),
+    ('카카오뱅크', 'KakaoBank', 'https://tech.kakaobank.com/rss', 'https://tech.kakaobank.com', 'domestic_bank'),
+    ('케이뱅크', 'K Bank', NULL, 'https://www.kbanknow.com', 'domestic_bank'),
+    ('KB데이타시스템', 'KBDS', 'https://blog.kbds.co.kr/rss', 'https://blog.kbds.co.kr', 'domestic_bank'),
+    ('신한DS', 'Shinhan DS', NULL, 'https://www.shinhands.co.kr', 'domestic_bank'),
+    ('하나금융융합기술원', 'Hana Tech', NULL, 'https://hit.hanati.co.kr', 'domestic_bank'),
+    ('미래에셋증권', 'Mirae Asset', NULL, 'https://securities.miraeasset.com', 'domestic_securities'),
+    ('키움증권', 'Kiwoom', NULL, 'https://www.kiwoom.com', 'domestic_securities'),
+    ('한국투자증권', 'KIS', NULL, 'https://www.truefriend.com', 'domestic_securities'),
+    ('두나무', 'Dunamu', 'https://medium.com/feed/두나무-기술블로그', 'https://medium.com/두나무-기술블로그', 'domestic_securities'),
+    ('업비트', 'Upbit', 'https://medium.com/feed/두나무-기술블로그', 'https://medium.com/두나무-기술블로그', 'crypto'),
+    ('빗썸', 'Bithumb', NULL, 'https://www.bithumb.com', 'crypto'),
+    ('코인원', 'Coinone', NULL, 'https://coinone.co.kr', 'crypto'),
+    ('클레이튼', 'Klaytn', 'https://medium.com/feed/klaytn', 'https://medium.com/klaytn', 'crypto'),
+    ('Stripe', 'Stripe', 'https://stripe.com/blog/engineering/rss', 'https://stripe.com/blog/engineering', 'global_fintech'),
+    ('Plaid', 'Plaid', 'https://plaid.com/blog/rss.xml', 'https://plaid.com/blog', 'global_fintech'),
+    ('Robinhood', 'Robinhood', 'https://robinhood.engineering/rss', 'https://robinhood.engineering', 'global_fintech'),
+    ('Monzo', 'Monzo', 'https://monzo.com/blog/technology/rss', 'https://monzo.com/blog/technology', 'global_fintech'),
+    ('Revolut', 'Revolut', 'https://medium.com/feed/revolut', 'https://medium.com/revolut', 'global_fintech'),
+    ('Wise', 'Wise', 'https://medium.com/feed/transferwise-engineering', 'https://medium.com/transferwise-engineering', 'global_fintech'),
+    ('Coinbase', 'Coinbase', 'https://www.coinbase.com/blog/engineering/rss', 'https://www.coinbase.com/blog/engineering', 'crypto'),
+    ('Binance', 'Binance', 'https://binance.github.io/feed.xml', 'https://binance.github.io', 'crypto')
+ON CONFLICT DO NOTHING;
