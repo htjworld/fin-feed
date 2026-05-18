@@ -99,10 +99,21 @@ public class RssCrawlerService {
                 .summary(extractSummary(entry))
                 .thumbnailUrl(thumbnail)
                 .publishedAt(toLocalDateTime(entry))
+                .tags(extractTags(entry))
                 .build();
 
         articleRepository.save(article);
         return true;
+    }
+
+    private String[] extractTags(SyndEntry entry) {
+        return entry.getCategories().stream()
+                .map(cat -> cat.getName())
+                .filter(name -> name != null && !name.isBlank())
+                .map(name -> name.trim().toLowerCase())
+                .distinct()
+                .limit(5)
+                .toArray(String[]::new);
     }
 
     private String sanitize(String text) {
