@@ -34,16 +34,11 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
 
   if (!company) return null;
 
-  const Tag = article.url ? 'a' : 'div';
-  const linkProps = article.url
-    ? { href: article.url, target: '_blank', rel: 'noopener noreferrer' }
-    : {};
-
   return (
-    <Tag
-      {...linkProps}
+    <article
       className={`card ${article.pinned ? 'pinned' : ''} ${view === 'list' ? 'list-row' : ''}`}
-      style={{ textDecoration: 'none', color: 'inherit', cursor: article.url ? 'pointer' : 'default' }}
+      onClick={() => article.url && window.open(article.url, '_blank', 'noopener,noreferrer')}
+      style={{ cursor: article.url ? 'pointer' : 'default' }}
     >
       <Thumbnail article={article} company={company} sector={sector} />
       <div className="card-body">
@@ -67,6 +62,6 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
           <span className="card-read"><Ic.ext /> 원문</span>
         </div>
       </div>
-    </Tag>
+    </article>
   );
 }

@@ -74,7 +74,7 @@ export function toCompany(c: ApiCompany): Company {
     sector: c.sector,
     color: SECTOR_COLORS[c.sector] ?? '#888',
     count: c.articleCount,
-    logo_url: c.logoUrl ?? undefined,
+    logo_url: c.logoUrl ? (c.logoUrl.startsWith('/') ? `${BASE}${c.logoUrl}` : c.logoUrl) : undefined,
   };
 }
 

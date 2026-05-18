@@ -34,6 +34,9 @@ management:
 cors:
   allowed-origins: "http://localhost:3000,${FRONTEND_URL:https://finfeed.vercel.app}"
 
+logos:
+  directory: ${LOGOS_DIR:./logos}
+
 crawler:
   api-key: ${CRAWLER_API_KEY:dev-key}
   schedule:
