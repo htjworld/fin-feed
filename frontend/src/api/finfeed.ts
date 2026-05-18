@@ -54,6 +54,7 @@ export function toArticle(a: ApiArticle): Article {
   return {
     id: a.id,
     title: a.title,
+    url: a.url,
     company: String(a.company.id),
     published_at: a.publishedAt,
     tags: a.tags ?? [],
