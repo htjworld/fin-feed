@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { COLLECTIONS, SECTORS, CATEGORIES } from '@/data';
-import type { Filters, Collection, Article, Sector } from '@/types';
+import type { Filters, Collection, Article, Sector, Company } from '@/types';
 import { AppProvider } from '@/context/AppContext';
 import { fetchArticles, fetchCompanies } from '@/api/finfeed';
 import Header from './Header';
@@ -27,7 +27,7 @@ export default function FinFeedApp() {
   const [density, setDensity] = useState<'comfortable' | 'dense'>('comfortable');
 
   const [articles, setArticles] = useState<Article[]>([]);
-  const [companies, setCompanies] = useState([] as ReturnType<typeof Array<(typeof companies)[0]>>);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -52,7 +52,7 @@ export default function FinFeedApp() {
     fetchCompanies().then(setCompanies).catch(console.error);
   }, []);
 
-  const loadArticles = useCallback(async (reset: boolean) => {
+  const doFetch = useCallback(async (reset: boolean, currentCursor: string | null) => {
     const id = ++fetchRef.current;
     reset ? setLoading(true) : setLoadingMore(true);
 
@@ -62,7 +62,7 @@ export default function FinFeedApp() {
         sector: filters.sector,
         q: query || undefined,
         tag,
-        cursor: reset ? undefined : cursor ?? undefined,
+        cursor: reset ? undefined : currentCursor ?? undefined,
         size: 30,
       });
       if (fetchRef.current !== id) return;
@@ -77,11 +77,15 @@ export default function FinFeedApp() {
         setLoadingMore(false);
       }
     }
-  }, [filters.sector, filters.categories, query, cursor]);
+  }, [filters.sector, filters.categories, query]);
+
+  const loadArticles = useCallback((reset: boolean) => {
+    doFetch(reset, reset ? null : cursor);
+  }, [doFetch, cursor]);
 
   useEffect(() => {
-    loadArticles(true);
-  }, [filters.sector, filters.categories, query]);
+    doFetch(true, null);
+  }, [doFetch]);
 
   const isSearch = query.length > 0;
   const isFiltered =
@@ -269,7 +273,7 @@ export default function FinFeedApp() {
             )}
 
             {showHero && featured && fCompany && (
-              <div className="hero">
+              <div className="hero" style={{ cursor: featured.url ? 'pointer' : 'default' }} onClick={() => featured.url && window.open(featured.url, '_blank', 'noopener,noreferrer')}>
                 <div className="hero-left">
                   <div className="hero-eyebrow"><span className="dot" /> THIS WEEK · 최신 아티클</div>
                   <h2>{featured.title}</h2>

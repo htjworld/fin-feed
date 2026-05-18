@@ -34,9 +34,13 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
 
   if (!company) return null;
 
+  const linkProps = article.url
+    ? { href: article.url, target: '_blank' as const, rel: 'noopener noreferrer' }
+    : { href: '#', onClick: (e: React.MouseEvent) => e.preventDefault() };
+
   return (
     <article className={`card ${article.pinned ? 'pinned' : ''} ${view === 'list' ? 'list-row' : ''}`}>
-      <a href={article.url || '#'} target="_blank" rel="noopener noreferrer" style={{ display: 'contents' }}>
+      <a {...linkProps} style={{ display: 'contents' }}>
         <Thumbnail article={article} company={company} sector={sector} />
         <div className="card-body">
           <div className="card-meta">
