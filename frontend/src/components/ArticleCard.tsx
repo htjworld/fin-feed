@@ -34,22 +34,19 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
 
   if (!company) return null;
 
+  const Tag = article.url ? 'a' : 'div';
+  const linkProps = article.url
+    ? { href: article.url, target: '_blank', rel: 'noopener noreferrer' }
+    : {};
+
   return (
-    <article
+    <Tag
+      {...linkProps}
       className={`card ${article.pinned ? 'pinned' : ''} ${view === 'list' ? 'list-row' : ''}`}
-      style={{ position: 'relative' }}
+      style={{ textDecoration: 'none', color: 'inherit', cursor: article.url ? 'pointer' : 'default' }}
     >
-      {article.url && (
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={article.title}
-          style={{ position: 'absolute', inset: 0, zIndex: 0 }}
-        />
-      )}
       <Thumbnail article={article} company={company} sector={sector} />
-      <div className="card-body" style={{ position: 'relative', zIndex: 1 }}>
+      <div className="card-body">
         <div className="card-meta">
           <span style={{ color: 'var(--ink-2)', fontWeight: 500 }}>{company.name}</span>
           <span className="sep" />
@@ -67,19 +64,9 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
               </span>
             ))}
           </div>
-          {article.url && (
-            <a
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="card-read"
-              style={{ position: 'relative', zIndex: 2 }}
-            >
-              <Ic.ext /> 원문
-            </a>
-          )}
+          <span className="card-read"><Ic.ext /> 원문</span>
         </div>
       </div>
-    </article>
+    </Tag>
   );
 }
