@@ -61,6 +61,13 @@
 - **해결**: `@Value("${logos.directory:./logos}")` + `Paths.get(logosDirectory).toAbsolutePath()`로 명시적 절대 경로 사용
 - **교훈**: 상대 경로는 항상 CWD 기준으로 검증. 프레임워크 내 파일 IO는 절대 경로 또는 설정값 기반 경로 사용
 
+### 11. Medium 블로그 URL 미검증 + SPA 크롤링 한계
+- **실수 1**: 두나무/업비트 Medium URL (`medium.com/두나무-기술블로그`)을 검증 없이 설정 → 실제로는 404 (해당 publication 없음 또는 폐쇄)
+- **실수 2**: KB데이타시스템 블로그(`blog.kbds.co.kr`)를 CSS 선택자로 크롤링 시도 → React SPA라 `<div id="root"></div>`만 반환, JavaScript 없이 콘텐츠 없음
+- **한계**: Jsoup/Rome 기반 크롤러는 SSR 사이트만 지원. SPA + Medium 등 CSR 사이트는 Selenium(헤드리스 Chrome) 필요
+- **교훈**: 크롤러 타입 결정 전 실제 페이지 소스 확인 필수. `curl -A "Mozilla/5.0" URL | grep "<article"` 으로 SSR 여부 먼저 체크
+- **다음 단계**: Selenium 추가 시 `blog.kbds.co.kr`(SPA), `medium.com` 크롤링 가능해짐
+
 ### 10. Wikipedia 로고 URL 차단
 - **실수**: Wikimedia Commons URL을 hardcode했지만 대부분 403 또는 리다이렉트 후 실패
 - **해결**: Clearbit Logo API → Google Favicon API 순으로 fallback
