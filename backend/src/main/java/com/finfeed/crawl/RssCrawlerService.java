@@ -4,6 +4,9 @@ import com.finfeed.article.Article;
 import com.finfeed.article.ArticleRepository;
 import com.finfeed.company.Company;
 import com.finfeed.company.CompanyRepository;
+import com.rometools.modules.mediarss.MediaEntryModule;
+import com.rometools.modules.mediarss.types.MediaContent;
+import com.rometools.modules.mediarss.types.Thumbnail;
 import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEnclosure;
 import com.rometools.rome.feed.synd.SyndEntry;
@@ -106,6 +109,20 @@ public class RssCrawlerService {
     }
 
     private String extractThumbnail(SyndEntry entry) {
+        MediaEntryModule media = (MediaEntryModule) entry.getModule(MediaEntryModule.URI);
+        if (media != null) {
+            for (MediaContent content : media.getMediaContents()) {
+                if (content.getReference() != null) {
+                    return content.getReference().toString();
+                }
+            }
+            if (media.getMetadata() != null) {
+                Thumbnail[] thumbnails = media.getMetadata().getThumbnail();
+                if (thumbnails.length > 0 && thumbnails[0].getUrl() != null) {
+                    return thumbnails[0].getUrl().toString();
+                }
+            }
+        }
         for (SyndEnclosure enc : entry.getEnclosures()) {
             if (enc.getType() != null && enc.getType().startsWith("image/")) {
                 return enc.getUrl();

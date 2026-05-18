@@ -35,7 +35,7 @@ EXECUTE FUNCTION tsvector_update_trigger(search_vector, 'pg_catalog.simple', tit
 
 CREATE TABLE IF NOT EXISTS crawl_logs (
     id             BIGSERIAL PRIMARY KEY,
-    company_id     INT REFERENCES companies (id),
+    company_id     BIGINT REFERENCES companies (id),
     status         VARCHAR(20),
     articles_added INT DEFAULT 0,
     error_message  TEXT,
