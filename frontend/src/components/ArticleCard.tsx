@@ -34,36 +34,48 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
 
   if (!company) return null;
 
-  const linkProps = article.url
-    ? { href: article.url, target: '_blank' as const, rel: 'noopener noreferrer' }
-    : { href: '#', onClick: (e: React.MouseEvent) => e.preventDefault() };
+  const openArticle = () => {
+    if (article.url) window.open(article.url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
-    <article className={`card ${article.pinned ? 'pinned' : ''} ${view === 'list' ? 'list-row' : ''}`}>
-      <a {...linkProps} style={{ display: 'contents' }}>
-        <Thumbnail article={article} company={company} sector={sector} />
-        <div className="card-body">
-          <div className="card-meta">
-            <span style={{ color: 'var(--ink-2)', fontWeight: 500 }}>{company.name}</span>
-            <span className="sep" />
-            <span className="date">{fmtDate(article.published_at)}</span>
-            <span className="sep" />
-            <span><Ic.clock style={{ verticalAlign: -1, marginRight: 3 }} />{article.read}</span>
-          </div>
-          <h3 className="card-title">{highlight(article.title, query)}</h3>
-          <p className="card-summary">{highlight(article.summary, query)}</p>
-          <div className="card-foot">
-            <div className="card-tags">
-              {article.tags.map((t) => (
-                <span key={t} className={`tag ${highlightTags.includes(t) ? 'hit' : ''}`}>
-                  {CATEGORY_BY_ID[t]?.label || t}
-                </span>
-              ))}
-            </div>
-            <span className="card-read"><Ic.ext /> 원문</span>
-          </div>
+    <article
+      className={`card ${article.pinned ? 'pinned' : ''} ${view === 'list' ? 'list-row' : ''}`}
+      onClick={openArticle}
+      style={{ cursor: article.url ? 'pointer' : 'default' }}
+    >
+      <Thumbnail article={article} company={company} sector={sector} />
+      <div className="card-body">
+        <div className="card-meta">
+          <span style={{ color: 'var(--ink-2)', fontWeight: 500 }}>{company.name}</span>
+          <span className="sep" />
+          <span className="date">{fmtDate(article.published_at)}</span>
+          <span className="sep" />
+          <span><Ic.clock style={{ verticalAlign: -1, marginRight: 3 }} />{article.read}</span>
         </div>
-      </a>
+        <h3 className="card-title">{highlight(article.title, query)}</h3>
+        <p className="card-summary">{highlight(article.summary, query)}</p>
+        <div className="card-foot">
+          <div className="card-tags">
+            {article.tags.map((t) => (
+              <span key={t} className={`tag ${highlightTags.includes(t) ? 'hit' : ''}`}>
+                {CATEGORY_BY_ID[t]?.label || t}
+              </span>
+            ))}
+          </div>
+          {article.url && (
+            <a
+              href={article.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="card-read"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Ic.ext /> 원문
+            </a>
+          )}
+        </div>
+      </div>
     </article>
   );
 }
