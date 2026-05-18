@@ -5,9 +5,24 @@ CREATE TABLE IF NOT EXISTS companies (
     logo_url   TEXT,
     rss_url    TEXT,
     site_url   TEXT NOT NULL,
+    blog_url   TEXT,
     sector     VARCHAR(50),
+    crawl_type VARCHAR(20) DEFAULT 'NONE',
     is_active  BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS parsing_selectors (
+    id                  BIGSERIAL PRIMARY KEY,
+    company_id          BIGINT REFERENCES companies (id) UNIQUE NOT NULL,
+    blog_url            TEXT NOT NULL,
+    article_selector    TEXT NOT NULL,
+    title_selector      TEXT NOT NULL,
+    link_selector       TEXT NOT NULL,
+    thumbnail_selector  TEXT,
+    date_selector       TEXT,
+    pagination_type     VARCHAR(20) DEFAULT 'NONE',
+    next_page_selector  TEXT
 );
 
 CREATE TABLE IF NOT EXISTS articles (

@@ -31,6 +31,8 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
             """, nativeQuery = true)
     List<Object[]> findAllWithArticleCountBySector(@Param("sector") String sector);
 
+    List<Company> findByActiveTrue();
+
     List<Company> findByActiveTrueAndRssUrlNotNull();
 
     List<Company> findBySectorAndActiveTrue(Sector sector);
