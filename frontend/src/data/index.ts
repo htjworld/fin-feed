@@ -40,16 +40,16 @@ export const COMPANIES: Company[] = [
 ];
 
 export const CATEGORIES: Category[] = [
-  { id: 'payment', label: '결제·송금', count: 421 },
-  { id: 'security', label: '보안·인증', count: 312 },
-  { id: 'mydata', label: '마이데이터', count: 184 },
-  { id: 'blockchain', label: '블록체인', count: 297 },
-  { id: 'infra', label: '인프라·DevOps', count: 538 },
-  { id: 'backend', label: '백엔드', count: 612 },
-  { id: 'ai', label: 'AI·ML', count: 263 },
-  { id: 'data', label: '데이터·DB', count: 389 },
-  { id: 'mobile', label: '모바일', count: 247 },
-  { id: 'trading', label: '트레이딩·HTS', count: 156 },
+  { id: 'payment', label: '결제·송금', count: 0 },
+  { id: 'security', label: '보안·인증', count: 0 },
+  { id: 'mydata', label: '마이데이터', count: 0 },
+  { id: 'blockchain', label: '블록체인', count: 0 },
+  { id: 'infra', label: '인프라·DevOps', count: 0 },
+  { id: 'backend', label: '백엔드', count: 0 },
+  { id: 'ai', label: 'AI·ML', count: 0 },
+  { id: 'data', label: '데이터·DB', count: 0 },
+  { id: 'mobile', label: '모바일', count: 0 },
+  { id: 'trading', label: '트레이딩·HTS', count: 0 },
 ];
 
 export const THUMB_BG: ThumbBg = {

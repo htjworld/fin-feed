@@ -9,9 +9,10 @@ type Props = {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   sectors: Sector[];
+  inCollection?: boolean;
 };
 
-export default function Sidebar({ filters, setFilters, sectors }: Props) {
+export default function Sidebar({ filters, setFilters, sectors, inCollection = false }: Props) {
   const { companies, totalCount } = useApp();
   const [expandCompanies, setExpandCompanies] = useState(false);
 
@@ -40,6 +41,27 @@ export default function Sidebar({ filters, setFilters, sectors }: Props) {
         : [...f.categories, id],
     }));
   };
+
+  if (inCollection) {
+    return (
+      <aside className="sidebar">
+        <div className="side-section" style={{ padding: '24px 18px' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--brand)', letterSpacing: '.06em', marginBottom: 10 }}>
+            ★ COLLECTION
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.6 }}>
+            큐레이션 컬렉션 뷰<br />섹터·회사 필터는<br />일반 피드에서 사용하세요.
+          </div>
+          <button
+            onClick={() => setFilters((f) => ({ ...f, collection: null }))}
+            style={{ marginTop: 16, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', background: 'transparent', border: '1px solid var(--line)', borderRadius: 6, padding: '7px 12px', cursor: 'pointer', width: '100%' }}
+          >
+            ← 피드로 돌아가기
+          </button>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="sidebar">
@@ -105,7 +127,6 @@ export default function Sidebar({ filters, setFilters, sectors }: Props) {
               onClick={() => toggleCategory(c.id)}
             >
               {c.label}
-              <span className="num">{c.count}</span>
             </button>
           ))}
         </div>

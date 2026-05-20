@@ -7,9 +7,10 @@ type Props = {
   query: string;
   setQuery: (q: string) => void;
   onSelect: (item: { company?: string; id?: number }) => void;
+  onReset: () => void;
 };
 
-export default function Header({ query, setQuery, onSelect }: Props) {
+export default function Header({ query, setQuery, onSelect, onReset }: Props) {
   const { companies, companyById } = useApp();
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -40,7 +41,7 @@ export default function Header({ query, setQuery, onSelect }: Props) {
 
   return (
     <header className="header">
-      <div className="brand">
+      <div className="brand" onClick={onReset} style={{ cursor: 'pointer' }}>
         <div className="brand-mark">F</div>
         <div className="brand-text">FinFeed<span className="dot">.</span></div>
       </div>

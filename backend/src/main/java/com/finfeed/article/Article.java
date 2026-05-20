@@ -68,6 +68,7 @@ public class Article {
     public String[] getTags() { return tags; }
 
     public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+    public void setTags(String[] tags) { this.tags = tags; }
 
     public static final class Builder {
         private Company company;
