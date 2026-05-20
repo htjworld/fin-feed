@@ -72,3 +72,28 @@
 - **실수**: Wikimedia Commons URL을 hardcode했지만 대부분 403 또는 리다이렉트 후 실패
 - **해결**: Clearbit Logo API → Google Favicon API 순으로 fallback
 - **교훈**: 외부 이미지 URL은 항상 차단 가능성을 고려해 fallback 체인 구성
+
+---
+
+## 크롤러 — 데이터 품질
+
+### 12. RSS 피드 상대 경로 URL 저장
+- **실수**: `RssCrawlerService`에서 `entry.getLink()` 그대로 저장 → 카카오뱅크 RSS가 `/posts/2603-react-summit-us` 형태의 상대 경로 반환
+- **증상**: 프론트에서 `http://localhost:3000/posts/...`로 렌더링, 원문 링크 클릭 안 됨
+- **해결**: `resolveUrl(url, company.getSiteUrl())`로 절대 경로 변환
+- **교훈**: RSS `<link>` 태그가 항상 절대 경로라는 보장 없음. 저장 전 반드시 `http` 여부 체크 후 베이스 URL 붙이기
+
+### 13. GitHub Actions workflow가 main 브랜치에 없으면 UI에서 안 보임
+- **실수**: `crawl.yml`을 `dev` 브랜치에서 개발 후 main에 머지 안 함 → GitHub Actions 탭에 워크플로우 미표시
+- **해결**: `gh workflow run crawl.yml --ref dev`로 CLI 직접 트리거, 이후 main 머지
+- **교훈**: GitHub Actions UI는 default branch 기준. `workflow_dispatch`도 CLI로는 브랜치 지정 가능하지만 UI 표시는 main 필요
+
+### 14. 백엔드 재시작 실패 — 포트 충돌 감지 못함
+- **실수**: `pkill` 실패 후 새 Spring Boot 기동 시도 → "Port 8080 already in use" 에러. `curl /health`가 구버전 서버에서 응답해서 새 코드 반영 여부 착각
+- **해결**: PowerShell `Get-NetTCPConnection`으로 PID 찾아 `Stop-Process` 강제 종료
+- **교훈**: bash에서 `pkill`로 Windows Java 프로세스 종료 안 됨. 포트 확인은 항상 `Get-NetTCPConnection -LocalPort 8080`
+
+### 15. Jsoup으로 Medium OG 이미지 못 가져오는 문제
+- **실수**: Medium 아티클에 Jsoup 직접 접근 → 봇 차단으로 OG image null 반환. Jsoup에서 Jina.ai 호출 시도했지만 내부적으로 실패 (오류 묵살)
+- **해결**: `HttpURLConnection`으로 교체, `miro.medium.com/v2/resize:fit:` 패턴 regex 추출
+- **교훈**: Jsoup은 Medium/Cloudflare 차단됨. Java에서 외부 API 호출은 `HttpURLConnection` 또는 `RestTemplate` 사용. `catch (Exception ignored)` 패턴은 디버깅을 불가능하게 만듦 — 최소한 stderr 로깅 추가 필요
