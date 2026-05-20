@@ -131,23 +131,66 @@ public class RssCrawlerService {
 
     private String fetchOgImage(String url) {
         if (url == null || url.isBlank()) return null;
+        if (url.contains("medium.com")) return fetchThumbnailViaJina(url);
         try {
             Document doc = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                    .timeout(8_000)
+                    .timeout(10_000)
                     .followRedirects(true)
                     .get();
             Element og = doc.selectFirst("meta[property=og:image]");
-            if (og != null && !og.attr("content").isBlank()) return og.attr("content").trim();
+            if (og != null) {
+                String img = resolveImageUrl(og.attr("content"), url);
+                if (isUsableImage(img)) return img;
+            }
             Element tw = doc.selectFirst("meta[name=twitter:image]");
-            if (tw != null && !tw.attr("content").isBlank()) return tw.attr("content").trim();
+            if (tw != null) {
+                String img = resolveImageUrl(tw.attr("content"), url);
+                if (isUsableImage(img)) return img;
+            }
             Elements imgs = doc.select("article img, main img, .post img, .content img");
             for (Element img : imgs) {
                 String src = img.absUrl("src");
-                if (!src.isBlank() && !src.contains("logo") && !src.contains("icon")) return src;
+                if (isUsableImage(src)) return src;
             }
         } catch (Exception ignored) {}
         return null;
+    }
+
+    private String fetchThumbnailViaJina(String url) {
+        try {
+            String cleanUrl = url.contains("?source=rss") ? url.substring(0, url.indexOf("?source=rss")) : url;
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection)
+                    new java.net.URL("https://r.jina.ai/" + cleanUrl).openConnection();
+            conn.setRequestProperty("User-Agent", "FinFeed/1.0");
+            conn.setRequestProperty("Accept", "text/plain");
+            conn.setConnectTimeout(10_000);
+            conn.setReadTimeout(20_000);
+            String body = new String(conn.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("https://miro\\.medium\\.com/v2/resize:fit:[^\\s)]+")
+                    .matcher(body);
+            while (m.find()) {
+                String img = m.group();
+                if (!img.contains("32:32")) return img;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private String resolveImageUrl(String imageUrl, String pageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return null;
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) return imageUrl;
+        try {
+            java.net.URI base = java.net.URI.create(pageUrl);
+            return base.getScheme() + "://" + base.getHost() + (imageUrl.startsWith("/") ? imageUrl : "/" + imageUrl);
+        } catch (Exception ignored) { return imageUrl; }
+    }
+
+    private boolean isUsableImage(String url) {
+        if (url == null || url.isBlank() || !url.startsWith("http")) return false;
+        String lower = url.toLowerCase();
+        return !lower.contains("logo") && !lower.contains("icon") && !lower.contains("og_gray") && !lower.contains("placeholder");
     }
 
     private LocalDateTime toLocalDateTime(SyndEntry entry) {

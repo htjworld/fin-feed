@@ -170,43 +170,74 @@ public class RssCrawlerService {
 
     private String fetchThumbnailFromHtml(String url) {
         if (url == null || url.isBlank()) return null;
+        if (isMediumUrl(url)) return fetchThumbnailViaJina(url);
         try {
             Document doc = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                    .timeout(5000)
+                    .timeout(10_000)
                     .followRedirects(true)
                     .get();
 
-            // 1. og:image
             Element ogImage = doc.selectFirst("meta[property=og:image]");
             if (ogImage != null) {
-                String content = ogImage.attr("content");
-                if (content != null && !content.isBlank()) {
-                    return content.trim();
-                }
+                String content = resolveImageUrl(ogImage.attr("content"), url);
+                if (isUsableImage(content)) return content;
             }
-
-            // 2. twitter:image
             Element twitterImage = doc.selectFirst("meta[name=twitter:image]");
             if (twitterImage != null) {
-                String content = twitterImage.attr("content");
-                if (content != null && !content.isBlank()) {
-                    return content.trim();
-                }
+                String content = resolveImageUrl(twitterImage.attr("content"), url);
+                if (isUsableImage(content)) return content;
             }
-
-            // 3. Fallback: First high-quality image in the post body
             Elements imgs = doc.select("article img, main img, .post img, .content img");
             for (Element img : imgs) {
                 String src = img.absUrl("src");
-                if (src != null && !src.isBlank() && !src.contains("logo") && !src.contains("icon")) {
-                    return src;
-                }
+                if (isUsableImage(src)) return src;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private boolean isMediumUrl(String url) {
+        return url.contains("medium.com");
+    }
+
+    private String fetchThumbnailViaJina(String url) {
+        try {
+            String cleanUrl = url.contains("?source=rss") ? url.substring(0, url.indexOf("?source=rss")) : url;
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection)
+                    new java.net.URL("https://r.jina.ai/" + cleanUrl).openConnection();
+            conn.setRequestProperty("User-Agent", "FinFeed/1.0");
+            conn.setRequestProperty("Accept", "text/plain");
+            conn.setConnectTimeout(10_000);
+            conn.setReadTimeout(20_000);
+            String body = new String(conn.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("https://miro\\.medium\\.com/v2/resize:fit:[^\\s)]+")
+                    .matcher(body);
+            while (m.find()) {
+                String img = m.group();
+                if (!img.contains("32:32")) return img;
             }
         } catch (Exception e) {
-            System.err.println("Failed to fetch thumbnail from HTML for " + url + ": " + e.getMessage());
+            System.err.println("[Jina.ai] failed for " + url + ": " + e.getMessage());
         }
         return null;
+    }
+
+    private String resolveImageUrl(String imageUrl, String pageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return null;
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) return imageUrl;
+        try {
+            java.net.URI base = java.net.URI.create(pageUrl);
+            return base.getScheme() + "://" + base.getHost() + (imageUrl.startsWith("/") ? imageUrl : "/" + imageUrl);
+        } catch (Exception ignored) { return imageUrl; }
+    }
+
+    private boolean isUsableImage(String url) {
+        if (url == null || url.isBlank()) return false;
+        if (!url.startsWith("http")) return false;
+        String lower = url.toLowerCase();
+        return !lower.contains("logo") && !lower.contains("icon") && !lower.contains("og_gray") && !lower.contains("placeholder");
     }
 
     @Transactional
