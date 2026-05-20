@@ -51,14 +51,38 @@ export default function Thumbnail({ article, company, sector }: Props) {
 
   if (tier === 3) {
     const initials = company.name_en.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase();
+    const hasLogo = !!company.logo_url;
+    console.log("Thumbnail logo fallback debug - Company:", company.name, "logo_url:", company.logo_url, "hasLogo:", hasLogo);
     return (
       <div className="thumb thumb-logo" style={{ background: `linear-gradient(135deg, ${grad[0]}, ${grad[1]})` }}>
         <div className="thumb-bg" style={{ background: `linear-gradient(135deg, ${grad[0]}, ${grad[1]})` }} />
         <div
           className="thumb-logo-mark"
-          style={{ background: company.color, color: readableInk(company.color) }}
+          style={{
+            background: hasLogo ? '#ffffff' : company.color,
+            color: hasLogo ? '#000000' : readableInk(company.color),
+            padding: hasLogo ? '8px' : '0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            border: hasLogo ? '1px solid rgba(255,255,255,0.2)' : 'none',
+            boxShadow: hasLogo ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
+          }}
         >
-          {initials}
+          {company.logo_url ? (
+            <img
+              src={company.logo_url}
+              alt={company.name}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+              }}
+            />
+          ) : (
+            initials
+          )}
         </div>
         {corner}
         {pin}

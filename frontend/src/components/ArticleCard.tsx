@@ -1,7 +1,8 @@
 'use client';
 import React from 'react';
 import type { Article } from '@/types';
-import { COMPANY_BY_ID, SECTOR_BY_ID, CATEGORY_BY_ID } from '@/data';
+import { CATEGORY_BY_ID, SECTOR_BY_ID } from '@/data';
+import { useApp } from '@/context/AppContext';
 import Thumbnail from './Thumbnail';
 import { Ic } from './Icons';
 import { fmtDate } from './utils';
@@ -27,11 +28,26 @@ function highlight(text: string, q: string) {
 }
 
 export default function ArticleCard({ article, view = 'grid', query = '', highlightTags = [] }: Props) {
-  const company = COMPANY_BY_ID[article.company];
-  const sector = SECTOR_BY_ID[company.sector];
+  const { companyById } = useApp();
+  const company = companyById[article.company];
+  const sector = company ? (SECTOR_BY_ID[company.sector] ?? SECTOR_BY_ID['domestic_fintech']) : SECTOR_BY_ID['domestic_fintech'];
+
+  if (!company) return null;
 
   return (
-    <article className={`card ${article.pinned ? 'pinned' : ''} ${view === 'list' ? 'list-row' : ''}`}>
+    <article
+      className={`card ${article.pinned ? 'pinned' : ''} ${view === 'list' ? 'list-row' : ''}`}
+      style={{ position: 'relative' }}
+    >
+      {article.url && (
+        <a
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={article.title}
+          style={{ position: 'absolute', inset: 0, zIndex: 1 }}
+        />
+      )}
       <Thumbnail article={article} company={company} sector={sector} />
       <div className="card-body">
         <div className="card-meta">
@@ -51,7 +67,18 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
               </span>
             ))}
           </div>
-          <span className="card-read"><Ic.ext /> 원문</span>
+          {article.url && (
+            <a
+              href={article.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="card-read"
+              style={{ position: 'relative', zIndex: 2 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Ic.ext /> 원문
+            </a>
+          )}
         </div>
       </div>
     </article>

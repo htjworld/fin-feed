@@ -72,3 +72,6 @@ yarn-error.log*
 *.pid.lock
 .eslintcache
 .stylelintcache
+backend/.claude/
+backend/backend/
+small-town-research.md

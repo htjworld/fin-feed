@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/finfeed}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: never
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: never
+
+cors:
+  allowed-origins: "http://localhost:3000,${FRONTEND_URL:https://finfeed.vercel.app}"
+
+logos:
+  directory: ${LOGOS_DIR:./logos}
+
+crawler:
+  api-key: ${CRAWLER_API_KEY:dev-key}
+  schedule:
+    cron: "0 0 */6 * * *"
+  connection-timeout-ms: 10000
+  read-timeout-ms: 10000

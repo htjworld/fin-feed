@@ -1,22 +1,25 @@
 'use client';
 import React, { useState, useMemo } from 'react';
-import { SECTORS, COMPANIES, CATEGORIES } from '@/data';
-import type { Filters } from '@/types';
+import { CATEGORIES } from '@/data';
+import type { Filters, Sector } from '@/types';
+import { useApp } from '@/context/AppContext';
 import { Ic } from './Icons';
 
 type Props = {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  sectors: Sector[];
 };
 
-export default function Sidebar({ filters, setFilters }: Props) {
+export default function Sidebar({ filters, setFilters, sectors }: Props) {
+  const { companies, totalCount } = useApp();
   const [expandCompanies, setExpandCompanies] = useState(false);
 
   const visibleCompanies = useMemo(() => {
-    let cs = COMPANIES;
+    let cs = companies;
     if (filters.sector !== 'all') cs = cs.filter((c) => c.sector === filters.sector);
-    return cs.sort((a, b) => b.count - a.count);
-  }, [filters.sector]);
+    return [...cs].sort((a, b) => b.count - a.count);
+  }, [companies, filters.sector]);
 
   const shownCompanies = expandCompanies ? visibleCompanies : visibleCompanies.slice(0, 8);
 
@@ -43,7 +46,7 @@ export default function Sidebar({ filters, setFilters }: Props) {
       <div className="side-section">
         <div className="side-label">섹터 <span className="count">SECTOR</span></div>
         <div className="sector-list">
-          {SECTORS.map((s) => (
+          {sectors.map((s) => (
             <button
               key={s.id}
               className={`sector-item ${filters.sector === s.id ? 'active' : ''}`}
@@ -131,24 +134,20 @@ export default function Sidebar({ filters, setFilters }: Props) {
 
       <div className="side-section" style={{ padding: '18px 18px 30px' }}>
         <div style={{
-          padding: '14px',
-          background: 'var(--brand-tint-2)',
-          border: '1px solid var(--brand-tint)',
-          borderRadius: 8,
-          fontSize: 12.5,
-          color: 'var(--ink-2)',
-          lineHeight: 1.5,
+          padding: '14px', background: 'var(--brand-tint-2)',
+          border: '1px solid var(--brand-tint)', borderRadius: 8,
+          fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5,
         }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--brand)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 6 }}>
             ⌁ AUTO-SYNC
           </div>
           <div style={{ marginBottom: 8 }}>
             6시간마다 25개 블로그를 자동 수집.<br />
-            마지막 동기화 <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}>2시간 전</span>
+            RSS 활성 소스 {companies.filter((c) => c.count > 0).length}개
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)', display: 'flex', justifyContent: 'space-between' }}>
-            <span>+12 new today</span>
-            <span>2,147 total</span>
+            <span>{companies.filter((c) => c.sector === filters.sector || filters.sector === 'all').length} companies</span>
+            <span>{totalCount.toLocaleString()} total</span>
           </div>
         </div>
       </div>

@@ -133,8 +133,8 @@ GitHub Actions cron (무료)
 
 ### 프론트엔드
 ```
-Next.js (TypeScript)
-Tailwind CSS
+Next.js 15 (TypeScript)
+Custom CSS (디자인 시스템 변수 기반)
 Vercel 배포 (무료)
 ```
 
@@ -182,7 +182,7 @@ CREATE TABLE articles (
     summary         TEXT,
     published_at    TIMESTAMP,
     crawled_at      TIMESTAMP DEFAULT NOW(),
-    tags            TEXT[],          -- 카테고리 태그
+    tags            TEXT,            -- 카테고리 태그 (String[] 컨버터 사용)
     search_vector   TSVECTOR         -- Full-Text Search용
 );
 
@@ -213,14 +213,17 @@ CREATE TABLE crawl_logs (
 ## 7. API 설계
 
 ```
-GET  /api/articles                   목록 (페이지네이션)
+GET  /api/articles                   아티클 목록 (cursor 페이지네이션)
 GET  /api/articles?sector=crypto     섹터 필터
-GET  /api/articles?company=1         회사 필터
-GET  /api/articles?q=블록체인         키워드 검색
-GET  /api/articles?tag=보안          태그 필터
+GET  /api/articles?companyId=1       회사 필터
+GET  /api/articles?q=블록체인         키워드 검색 (FTS)
+GET  /api/articles?tag=infra         태그 필터
+GET  /api/articles?cursor=...        다음 페이지
 GET  /api/companies                  회사 목록 + 아티클 수
 GET  /api/companies?sector=crypto    섹터별 회사 목록
-GET  /health                         헬스체크 (UptimeRobot ping)
+GET  /health                         헬스체크
+POST /api/crawl                      전체 크롤링 트리거 (X-Crawler-Key 헤더 필요)
+POST /api/crawl/{companyId}          특정 회사 크롤링
 ```
 
 ### 응답 예시
@@ -231,20 +234,21 @@ GET  /health                         헬스체크 (UptimeRobot ping)
       "id": 1,
       "title": "업비트의 고가용성 아키텍처",
       "url": "https://medium.com/두나무...",
-      "thumbnail_url": "https://...",
+      "thumbnailUrl": "https://...",
+      "summary": "...",
+      "publishedAt": "2026-05-10T09:00:00",
+      "tags": ["blockchain", "infra"],
       "company": {
         "id": 5,
         "name": "업비트",
-        "logo_url": "...",
+        "nameEn": "Upbit",
+        "logoUrl": null,
         "sector": "crypto"
-      },
-      "published_at": "2026-05-10T09:00:00",
-      "tags": ["블록체인", "인프라"]
+      }
     }
   ],
-  "total": 2000,
-  "page": 1,
-  "size": 20
+  "nextCursor": "MjAyNi0wNS0xMFQwOTowMDowMCwx",
+  "hasNext": true
 }
 ```
 
