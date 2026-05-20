@@ -24,5 +24,7 @@ VALUES
     ('Revolut', 'Revolut', 'https://medium.com/feed/revolut', 'https://medium.com/revolut', 'global_fintech', 'https://www.google.com/s2/favicons?domain=revolut.com&sz=64'),
     ('Wise', 'Wise', 'https://medium.com/feed/wise-engineering', 'https://medium.com/wise-engineering', 'global_fintech', 'https://www.google.com/s2/favicons?domain=wise.com&sz=64'),
     ('Coinbase', 'Coinbase', NULL, 'https://www.coinbase.com/blog/landing/engineering', 'crypto', 'https://www.google.com/s2/favicons?domain=coinbase.com&sz=64'),
-    ('Binance', 'Binance', NULL, 'https://www.binance.com/en/blog/tech', 'crypto', 'https://www.google.com/s2/favicons?domain=binance.com&sz=64')
+    ('Binance', 'Binance', NULL, 'https://www.binance.com/en/blog/tech', 'crypto', 'https://www.google.com/s2/favicons?domain=binance.com&sz=64'),
+    ('카카오', 'Kakao', 'https://tech.kakao.com/feed/', 'https://tech.kakao.com', 'domestic_fintech', 'https://www.google.com/s2/favicons?domain=kakao.com&sz=64'),
+    ('삼쩜삼', 'Jobis&Villains', 'https://blog.3o3.co.kr/tag/tech/rss/', 'https://3o3.co.kr', 'domestic_fintech', 'https://www.google.com/s2/favicons?domain=3o3.co.kr&sz=64')
 ON CONFLICT DO NOTHING;

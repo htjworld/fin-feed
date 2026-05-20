@@ -35,6 +35,8 @@ export const COMPANIES: Company[] = [
   { id: 'wise', name: 'Wise', name_en: 'Wise', sector: 'global_fintech', color: '#9FE870', count: 31 },
   { id: 'coinbase', name: 'Coinbase', name_en: 'Coinbase', sector: 'crypto', color: '#0052FF', count: 78 },
   { id: 'binance', name: 'Binance', name_en: 'Binance', sector: 'crypto', color: '#F0B90B', count: 64 },
+  { id: 'kakao', name: '카카오', name_en: 'Kakao', sector: 'domestic_fintech', color: '#FAE100', count: 0 },
+  { id: 'jobisvillains', name: '삼쩜삼', name_en: 'Jobis&Villains', sector: 'domestic_fintech', color: '#5B67F6', count: 0 },
 ];
 
 export const CATEGORIES: Category[] = [
