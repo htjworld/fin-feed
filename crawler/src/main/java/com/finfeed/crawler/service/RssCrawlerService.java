@@ -63,7 +63,7 @@ public class RssCrawlerService {
     }
 
     private boolean saveArticle(Company company, SyndEntry entry) {
-        String url = entry.getLink();
+        String url = resolveUrl(entry.getLink(), company.getSiteUrl());
         if (url == null || url.isBlank() || articleRepository.existsByUrl(url)) return false;
 
         Article article = Article.builder()
@@ -77,6 +77,13 @@ public class RssCrawlerService {
                 .build();
         articleRepository.save(article);
         return true;
+    }
+
+    private String resolveUrl(String url, String siteUrl) {
+        if (url == null || url.isBlank()) return url;
+        if (url.startsWith("http://") || url.startsWith("https://")) return url;
+        String base = siteUrl == null ? "" : siteUrl.replaceAll("/+$", "");
+        return url.startsWith("/") ? base + url : base + "/" + url;
     }
 
     private String sanitize(String text) {
