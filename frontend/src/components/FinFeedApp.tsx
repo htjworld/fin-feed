@@ -34,6 +34,7 @@ export default function FinFeedApp() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const fetchRef = useRef(0);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const companyById = useMemo(
     () => Object.fromEntries(companies.map((c) => [c.id, c])),
@@ -86,6 +87,17 @@ export default function FinFeedApp() {
   useEffect(() => {
     doFetch(true, null);
   }, [doFetch]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && hasNext && !loadingMore && !loading) doFetch(false, cursor); },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNext, loadingMore, loading, cursor, doFetch]);
 
   const isSearch = query.length > 0;
   const isFiltered =
@@ -390,16 +402,10 @@ export default function FinFeedApp() {
               </>
             )}
 
-            {(hasNext || loadingMore) && !loading && (
-              <div style={{ display: 'flex', justifyContent: 'center', margin: '32px 0 20px' }}>
-                <button
-                  className="hbtn"
-                  onClick={() => loadArticles(false)}
-                  disabled={loadingMore}
-                  style={{ fontFamily: 'var(--font-mono)', fontSize: 12, padding: '10px 28px' }}
-                >
-                  {loadingMore ? 'LOADING…' : '더 보기 →'}
-                </button>
+            <div ref={sentinelRef} style={{ height: 1 }} />
+            {loadingMore && (
+              <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--ink-4)', fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>
+                LOADING…
               </div>
             )}
 
