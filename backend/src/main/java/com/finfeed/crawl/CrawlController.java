@@ -60,6 +60,14 @@ public class CrawlController {
         return ResponseEntity.ok(Map.of("repairedArticlesCount", count));
     }
 
+    @PostMapping("/repair-tags")
+    public ResponseEntity<Map<String, Object>> repairTags(
+            @RequestHeader("X-Crawler-Key") String key) {
+        if (!apiKey.equals(key)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        int count = rssCrawlerService.repairMissingTags();
+        return ResponseEntity.ok(Map.of("repairedTagsCount", count));
+    }
+
     @PostMapping("/logos")
     public ResponseEntity<Map<String, Object>> crawlLogos(
             @RequestHeader("X-Crawler-Key") String key) {

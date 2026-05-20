@@ -147,6 +147,12 @@ export default function FinFeedApp() {
     }
   };
 
+  const tagCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    articles.forEach(a => a.tags.forEach(t => { counts[t] = (counts[t] ?? 0) + 1; }));
+    return counts;
+  }, [articles]);
+
   const featured = articles[0];
   const fCompany = featured ? companyById[featured.company] : null;
   const fSector = fCompany ? sectorsWithCounts.find((s) => s.id === fCompany.sector) ?? sectorsWithCounts[0] : sectorsWithCounts[0];
@@ -192,8 +198,22 @@ export default function FinFeedApp() {
   return (
     <AppProvider value={{ companies, companyById, totalCount }}>
       <div className="shell">
-        <Header query={query} setQuery={setQuery} onSelect={onSelectFromSearch} />
-        <Sidebar filters={filters} setFilters={setFilters} sectors={sectorsWithCounts} />
+        <Header
+          query={query}
+          setQuery={setQuery}
+          onSelect={onSelectFromSearch}
+          onReset={() => {
+            setQuery('');
+            setFilters({ sector: 'all', companies: [], categories: [], date: 'all', collection: null });
+          }}
+        />
+        <Sidebar
+          filters={filters}
+          setFilters={setFilters}
+          sectors={sectorsWithCounts}
+          inCollection={filters.collection !== null}
+          tagCounts={tagCounts}
+        />
         <main className="main">
           <div className="main-inner">
             <div className="titlebar">

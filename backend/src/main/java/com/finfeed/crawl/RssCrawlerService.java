@@ -106,14 +106,34 @@ public class RssCrawlerService {
         return true;
     }
 
+    private static final java.util.Map<String, String[]> TAG_KEYWORDS = java.util.Map.of(
+        "payment",    new String[]{"결제","송금","payment","pg","간편결제","이체","정산","환불","청구"},
+        "security",   new String[]{"보안","security","인증","auth","암호","취약점","fraud","사기","zero-trust"},
+        "mydata",     new String[]{"마이데이터","mydata","오픈뱅킹","openbanking","계좌연동"},
+        "blockchain", new String[]{"블록체인","blockchain","defi","web3","스마트컨트랙트","nft","token","합의"},
+        "infra",      new String[]{"인프라","infra","kubernetes","k8s","docker","devops","ci/cd","배포","kafka","redis","aws","gcp","azure"},
+        "backend",    new String[]{"백엔드","backend","api","spring","java","python","node","rest","graphql","grpc","msa","마이크로서비스"},
+        "ai",         new String[]{"ai","ml","머신러닝","딥러닝","llm","gpt","추천","모델","임베딩","rag","챗봇"},
+        "data",       new String[]{"데이터","database","sql","postgresql","분석","analytics","spark","flink","파이프라인","warehouse"},
+        "mobile",     new String[]{"모바일","mobile","ios","android","flutter","swift","kotlin"},
+        "trading",    new String[]{"트레이딩","trading","hts","mts","매칭","시세","호가","주문","체결"}
+    );
+
     private String[] extractTags(SyndEntry entry) {
-        return entry.getCategories().stream()
-                .map(cat -> cat.getName())
-                .filter(name -> name != null && !name.isBlank())
-                .map(name -> name.trim().toLowerCase())
-                .distinct()
-                .limit(5)
-                .toArray(String[]::new);
+        java.util.Set<String> tags = new java.util.LinkedHashSet<>();
+        entry.getCategories().stream()
+                .filter(cat -> cat.getName() != null && !cat.getName().isBlank())
+                .map(cat -> cat.getName().trim().toLowerCase())
+                .forEach(tags::add);
+
+        String text = ((entry.getTitle() == null ? "" : entry.getTitle()) + " " +
+                       (entry.getDescription() == null ? "" : entry.getDescription().getValue())).toLowerCase();
+        TAG_KEYWORDS.forEach((tag, keywords) -> {
+            for (String kw : keywords) {
+                if (text.contains(kw)) { tags.add(tag); break; }
+            }
+        });
+        return tags.stream().limit(5).toArray(String[]::new);
     }
 
     private String resolveUrl(String url, String siteUrl) {
@@ -238,6 +258,35 @@ public class RssCrawlerService {
         if (!url.startsWith("http")) return false;
         String lower = url.toLowerCase();
         return !lower.contains("logo") && !lower.contains("icon") && !lower.contains("og_gray") && !lower.contains("placeholder");
+    }
+
+    @Transactional
+    public int repairMissingTags() {
+        List<com.finfeed.article.Article> articles = articleRepository.findAll();
+        int count = 0;
+        for (com.finfeed.article.Article article : articles) {
+            String[] existing = article.getTags();
+            if (existing != null && existing.length > 0) continue;
+            String text = (article.getTitle() == null ? "" : article.getTitle()) + " " +
+                          (article.getSummary() == null ? "" : article.getSummary());
+            String[] tags = applyKeywordTags(text.toLowerCase());
+            if (tags.length > 0) {
+                article.setTags(tags);
+                articleRepository.save(article);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private String[] applyKeywordTags(String text) {
+        java.util.Set<String> tags = new java.util.LinkedHashSet<>();
+        TAG_KEYWORDS.forEach((tag, keywords) -> {
+            for (String kw : keywords) {
+                if (text.contains(kw)) { tags.add(tag); break; }
+            }
+        });
+        return tags.stream().limit(5).toArray(String[]::new);
     }
 
     @Transactional
