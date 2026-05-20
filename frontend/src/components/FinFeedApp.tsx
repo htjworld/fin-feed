@@ -147,12 +147,6 @@ export default function FinFeedApp() {
     }
   };
 
-  const tagCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    articles.forEach(a => a.tags.forEach(t => { counts[t] = (counts[t] ?? 0) + 1; }));
-    return counts;
-  }, [articles]);
-
   const featured = articles[0];
   const fCompany = featured ? companyById[featured.company] : null;
   const fSector = fCompany ? sectorsWithCounts.find((s) => s.id === fCompany.sector) ?? sectorsWithCounts[0] : sectorsWithCounts[0];
@@ -212,7 +206,6 @@ export default function FinFeedApp() {
           setFilters={setFilters}
           sectors={sectorsWithCounts}
           inCollection={filters.collection !== null}
-          tagCounts={tagCounts}
         />
         <main className="main">
           <div className="main-inner">

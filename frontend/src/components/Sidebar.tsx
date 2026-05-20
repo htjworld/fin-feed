@@ -10,10 +10,9 @@ type Props = {
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   sectors: Sector[];
   inCollection?: boolean;
-  tagCounts?: Record<string, number>;
 };
 
-export default function Sidebar({ filters, setFilters, sectors, inCollection = false, tagCounts = {} }: Props) {
+export default function Sidebar({ filters, setFilters, sectors, inCollection = false }: Props) {
   const { companies, totalCount } = useApp();
   const [expandCompanies, setExpandCompanies] = useState(false);
 
@@ -121,19 +120,15 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
           <span>카테고리 <span style={{ color: 'var(--ink-4)', marginLeft: 4 }}>CATEGORY</span></span>
         </div>
         <div className="cat-list">
-          {CATEGORIES.map((c) => {
-            const cnt = tagCounts[c.id] ?? 0;
-            return (
-              <button
-                key={c.id}
-                className={`cat-chip ${filters.categories.includes(c.id) ? 'active' : ''}`}
-                onClick={() => toggleCategory(c.id)}
-              >
-                {c.label}
-                {cnt > 0 && <span className="num">{cnt}</span>}
-              </button>
-            );
-          })}
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.id}
+              className={`cat-chip ${filters.categories.includes(c.id) ? 'active' : ''}`}
+              onClick={() => toggleCategory(c.id)}
+            >
+              {c.label}
+            </button>
+          ))}
         </div>
       </div>
 
