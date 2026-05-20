@@ -106,11 +106,11 @@ CRAWLER_API_KEY=your-secret-crawler-key
 Supabase SQL Editor에서 순서대로 실행:
 
 ```
-backend/src/main/resources/db/schema.sql
-backend/src/main/resources/db/data.sql
-backend/src/main/resources/db/migration_003_add_crawl_type.sql
-backend/src/main/resources/db/migration_004_add_verified_sources.sql
+backend/src/main/resources/db/schema.sql   ← 테이블 생성
+backend/src/main/resources/db/data.sql     ← 회사 27개 초기 데이터
 ```
+
+> 크롤러(GitHub Actions)는 시작 시 schema/data를 자동으로 적용하므로, 빈 DB에 크롤러만 돌려도 됨.
 
 ### 3. 빌드 및 실행
 
