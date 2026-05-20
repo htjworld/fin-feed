@@ -14,6 +14,10 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,12 +70,15 @@ public class RssCrawlerService {
         String url = resolveUrl(entry.getLink(), company.getSiteUrl());
         if (url == null || url.isBlank() || articleRepository.existsByUrl(url)) return false;
 
+        String thumbnail = extractThumbnail(entry);
+        if (thumbnail == null || thumbnail.isBlank()) thumbnail = fetchOgImage(url);
+
         Article article = Article.builder()
                 .company(company)
                 .title(sanitize(entry.getTitle()))
                 .url(url)
                 .summary(extractSummary(entry))
-                .thumbnailUrl(extractThumbnail(entry))
+                .thumbnailUrl(thumbnail)
                 .publishedAt(toLocalDateTime(entry))
                 .tags(extractTags(entry))
                 .build();
@@ -120,6 +127,27 @@ public class RssCrawlerService {
                 .filter(t -> !t.isBlank())
                 .distinct().limit(5)
                 .toArray(String[]::new);
+    }
+
+    private String fetchOgImage(String url) {
+        if (url == null || url.isBlank()) return null;
+        try {
+            Document doc = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .timeout(8_000)
+                    .followRedirects(true)
+                    .get();
+            Element og = doc.selectFirst("meta[property=og:image]");
+            if (og != null && !og.attr("content").isBlank()) return og.attr("content").trim();
+            Element tw = doc.selectFirst("meta[name=twitter:image]");
+            if (tw != null && !tw.attr("content").isBlank()) return tw.attr("content").trim();
+            Elements imgs = doc.select("article img, main img, .post img, .content img");
+            for (Element img : imgs) {
+                String src = img.absUrl("src");
+                if (!src.isBlank() && !src.contains("logo") && !src.contains("icon")) return src;
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     private LocalDateTime toLocalDateTime(SyndEntry entry) {
