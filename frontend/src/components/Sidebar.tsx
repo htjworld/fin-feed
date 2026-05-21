@@ -27,18 +27,14 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
   const toggleCompany = (id: string) => {
     setFilters((f) => ({
       ...f,
-      companies: f.companies.includes(id)
-        ? f.companies.filter((x) => x !== id)
-        : [...f.companies, id],
+      companies: f.companies.includes(id) ? [] : [id],
     }));
   };
 
   const toggleCategory = (id: string) => {
     setFilters((f) => ({
       ...f,
-      categories: f.categories.includes(id)
-        ? f.categories.filter((x) => x !== id)
-        : [...f.categories, id],
+      categories: f.categories.includes(id) ? [] : [id],
     }));
   };
 
