@@ -15,7 +15,7 @@ public class CrawlerApplication {
 
         try (ConfigurableApplicationContext ctx = app.run(args)) {
             CrawlerRunner runner = ctx.getBean(CrawlerRunner.class);
-            int failures = runner.runAll();
+            int failures = runner.runForLowCount(50);
             System.exit(failures > 0 ? 1 : 0);
         }
     }

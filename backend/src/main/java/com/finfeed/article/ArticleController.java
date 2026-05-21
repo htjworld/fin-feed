@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/articles")
 public class ArticleController {
@@ -16,6 +18,11 @@ public class ArticleController {
 
     public ArticleController(ArticleService articleService) {
         this.articleService = articleService;
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Long>> getArticleCount() {
+        return ResponseEntity.ok(Map.of("count", articleService.countAll()));
     }
 
     @GetMapping

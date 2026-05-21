@@ -7,7 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CrawlerRunner {
@@ -38,6 +41,45 @@ public class CrawlerRunner {
                 .reduce(CrawlSummary.ZERO, CrawlSummary::merge);
 
         log.info("크롤링 완료: 수집 {}개, 실패 {}개", total.articlesAdded(), total.failures());
+        return total.failures();
+    }
+
+    public int runForLowCount(int threshold) {
+        Map<Long, Long> countMap = companyRepository.findArticleCountsByCompanyId().stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).longValue()
+                ));
+
+        List<Company> allCompanies = companyRepository.findByActiveTrueAndCrawlTypeNot(CrawlType.NONE);
+
+        log.info("======= 현재 회사별 아티클 수 =======");
+        allCompanies.stream()
+                .sorted(Comparator.comparingLong(c -> countMap.getOrDefault(c.getId(), 0L)))
+                .forEach(c -> log.info("  {} - {}개 [{}]",
+                        c.getName(), countMap.getOrDefault(c.getId(), 0L), c.getCrawlType()));
+        log.info("====================================");
+
+        List<Company> targets = allCompanies.stream()
+                .filter(c -> countMap.getOrDefault(c.getId(), 0L) < threshold)
+                .toList();
+
+        if (targets.isEmpty()) {
+            log.info("{}개 미만 회사 없음, 종료", threshold);
+            return 0;
+        }
+
+        log.info("대상 {}개사 크롤링 시작 (현재 {}개 미만)", targets.size(), threshold);
+
+        CrawlSummary total = CrawlSummary.ZERO;
+        for (Company company : targets) {
+            long before = countMap.getOrDefault(company.getId(), 0L);
+            CrawlSummary result = crawl(company);
+            total = total.merge(result);
+            log.info("[{}] {}개 → +{}개 추가 (합계 {}개)", company.getName(), before, result.articlesAdded(), before + result.articlesAdded());
+        }
+
+        log.info("=== 완료: 총 {}개 추가, 실패 {}건 ===", total.articlesAdded(), total.failures());
         return total.failures();
     }
 

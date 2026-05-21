@@ -110,6 +110,13 @@ export async function fetchArticles(params: FetchArticlesParams = {}): Promise<A
   };
 }
 
+export async function fetchArticleCount(): Promise<number> {
+  const res = await fetch(`${BASE}/api/articles/count`);
+  if (!res.ok) throw new Error(`articles/count API ${res.status}`);
+  const data: { count: number } = await res.json();
+  return data.count;
+}
+
 export async function fetchCompanies(): Promise<Company[]> {
   const res = await fetch(`${BASE}/api/companies`);
   if (!res.ok) throw new Error(`companies API ${res.status}`);

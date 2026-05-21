@@ -112,7 +112,7 @@ public class SelectorBlogCrawlerService {
         int added = 0;
         int page = 2;
 
-        while (page <= 5) {
+        while (page <= 20) {
             String pageUrl = selector.getBlogUrl() + (selector.getBlogUrl().contains("?") ? "&" : "?") + "page=" + page;
             List<ArticleInfo> articles = crawlPage(pageUrl, selector, driver);
             if (articles.isEmpty()) break;
