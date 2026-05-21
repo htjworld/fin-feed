@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS companies (
     is_active  BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW()
 );
-ALTER TABLE companies ADD CONSTRAINT IF NOT EXISTS companies_name_en_unique UNIQUE (name_en);
+ALTER TABLE companies ADD CONSTRAINT companies_name_en_unique UNIQUE (name_en);
 
 CREATE TABLE IF NOT EXISTS parsing_selectors (
     id                 BIGSERIAL PRIMARY KEY,
