@@ -1,5 +1,6 @@
 package com.finfeed.web;
 
+import com.finfeed.collection.CollectionNotFoundException;
 import com.finfeed.company.CompanyNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +23,8 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", "Not found"));
     }
 
-    @ExceptionHandler(CompanyNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleCompanyNotFound(CompanyNotFoundException e) {
+    @ExceptionHandler({CompanyNotFoundException.class, CollectionNotFoundException.class})
+    public ResponseEntity<Map<String, String>> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("error", e.getMessage()));
     }

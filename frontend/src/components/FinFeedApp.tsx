@@ -11,6 +11,7 @@ import ArticleCard from './ArticleCard';
 import ActiveFilters from './ActiveFilters';
 import CollectionCard from './CollectionCard';
 import CollectionsSection from './CollectionsSection';
+import DbCollectionsSection from './DbCollectionsSection';
 import Thumbnail from './Thumbnail';
 import { Ic } from './Icons';
 
@@ -479,7 +480,10 @@ export default function FinFeedApp() {
             )}
 
             {!isSearch && !isFiltered && (
-              <CollectionsSection onOpen={openCollection} />
+              <>
+                <DbCollectionsSection />
+                <CollectionsSection onOpen={openCollection} />
+              </>
             )}
           </div>
         </main>

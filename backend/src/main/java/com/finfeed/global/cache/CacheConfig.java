@@ -29,6 +29,13 @@ public class CacheConfig {
                         .maximumSize(50)
                         .build());
 
+        // collections: 수동 편집 시에만 변경 — 6시간 TTL
+        manager.registerCustomCache("collections",
+                Caffeine.newBuilder()
+                        .expireAfterWrite(6, TimeUnit.HOURS)
+                        .maximumSize(50)
+                        .build());
+
         return manager;
     }
 }
