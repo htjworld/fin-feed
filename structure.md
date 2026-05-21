@@ -247,3 +247,55 @@ fetchCompanies()
 | 변수 | 값 |
 |------|-----|
 | `NEXT_PUBLIC_API_URL` | `https://fin-feed.onrender.com` (Vercel 설정) |
+
+---
+
+## 4. 로컬 개발 환경 셋업
+
+### 백엔드 (IntelliJ)
+
+1. `backend/` 폴더를 **Open** (루트 아님)
+2. `pom.xml` 자동 인식 → Maven 프로젝트로 로드
+3. **Run Configuration** 생성
+   - Main class: `com.finfeed.FinFeedApplication`
+   - VM options: `-Dspring.profiles.active=local`
+   - Environment variables (Render 대시보드에서 확인):
+     ```
+     DATABASE_URL=jdbc:postgresql://...supabase...
+     DATABASE_USERNAME=postgres
+     DATABASE_PASSWORD=...
+     CRAWLER_API_KEY=finfeed-crawler-key
+     ```
+4. `application-local.yml` 자동 병합 → SQL 로그, DEBUG 레벨 활성화
+
+> Supabase 연결하므로 크롤링·컬렉션 등 실제 데이터 그대로 사용 가능.
+
+### 프론트엔드 (VSCode)
+
+1. `frontend/` 폴더 열기
+2. `.env.local.example` → `.env.local` 복사 후 값 채우기:
+   ```
+   NEXT_PUBLIC_API_URL=http://localhost:8080   # 로컬 백엔드 사용 시
+   # NEXT_PUBLIC_API_URL=https://fin-feed.onrender.com  # Render 직접 연결 시
+   ```
+3. `npm install && npm run dev` → `http://localhost:3000`
+
+### 환경변수 전체 목록
+
+#### 백엔드 (Render / IntelliJ)
+
+| 변수 | 필수 | 설명 |
+|------|------|------|
+| `DATABASE_URL` | ✅ | Supabase JDBC URL |
+| `DATABASE_USERNAME` | ✅ | Supabase DB 사용자명 |
+| `DATABASE_PASSWORD` | ✅ | Supabase DB 비밀번호 |
+| `CRAWLER_API_KEY` | ✅ | POST /api/crawl 인증 키 |
+| `FRONTEND_URL` | ✅ | CORS 허용 origin (Vercel URL) |
+| `LOGOS_DIR` | ❌ | 로고 파일 경로 (기본: `./logos`) |
+| `PORT` | ❌ | 서버 포트 (기본: 8080) |
+
+#### 프론트엔드 (Vercel / .env.local)
+
+| 변수 | 필수 | 설명 |
+|------|------|------|
+| `NEXT_PUBLIC_API_URL` | ✅ | 백엔드 API URL |
