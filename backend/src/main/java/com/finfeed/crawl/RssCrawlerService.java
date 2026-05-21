@@ -209,6 +209,11 @@ public class RssCrawlerService implements BlogCrawler {
                 String src = img.absUrl("src");
                 if (isUsableImage(src)) return src;
             }
+            Element firstImg = doc.selectFirst("img");
+            if (firstImg != null) {
+                String src = firstImg.absUrl("src");
+                if (src.startsWith("http")) return src;
+            }
         } catch (Exception ignored) {}
         return null;
     }
