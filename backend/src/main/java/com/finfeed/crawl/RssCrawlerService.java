@@ -16,6 +16,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,8 @@ import java.util.regex.Pattern;
 
 @Service
 public class RssCrawlerService implements BlogCrawler {
+
+    private static final Logger log = LoggerFactory.getLogger(RssCrawlerService.class);
 
     private final ArticleRepository articleRepository;
     private final CrawlLogRepository crawlLogRepository;
@@ -90,6 +94,10 @@ public class RssCrawlerService implements BlogCrawler {
         String thumbnail = extractThumbnail(entry);
         if (thumbnail == null || thumbnail.isBlank()) {
             thumbnail = fetchThumbnailFromHtml(url);
+        }
+        if (isVolatileThumbnail(thumbnail)) {
+            log.debug("휘발성 썸네일 URL 스킵: {}", thumbnail);
+            thumbnail = null;
         }
 
         Article article = Article.builder()
@@ -246,6 +254,12 @@ public class RssCrawlerService implements BlogCrawler {
         String lower = url.toLowerCase();
         return !lower.contains("logo") && !lower.contains("icon")
                 && !lower.contains("og_gray") && !lower.contains("placeholder");
+    }
+
+    // Astro/_astro, Vite/assets 등 빌드 해시 기반 URL은 배포 시마다 변경되어 휘발성으로 간주
+    private boolean isVolatileThumbnail(String url) {
+        if (url == null || url.isBlank()) return false;
+        return url.contains("/_astro/") || url.contains("/assets/");
     }
 
     // --- Repair utilities (called directly from CrawlController) ---
