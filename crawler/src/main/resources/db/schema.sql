@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS companies (
     id         BIGSERIAL PRIMARY KEY,
     name       VARCHAR(100) NOT NULL,
-    name_en    VARCHAR(100),
+    name_en    VARCHAR(100) UNIQUE,
     logo_url   TEXT,
     rss_url    TEXT,
     site_url   TEXT NOT NULL,
@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS companies (
     is_active  BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW()
 );
+ALTER TABLE companies ADD CONSTRAINT IF NOT EXISTS companies_name_en_unique UNIQUE (name_en);
 
 CREATE TABLE IF NOT EXISTS parsing_selectors (
     id                 BIGSERIAL PRIMARY KEY,
