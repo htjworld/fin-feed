@@ -31,7 +31,7 @@ public class CrawlController {
             @RequestHeader("X-Crawler-Key") String key) {
         if (!apiKey.equals(key)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        RssCrawlerService.CrawlSummary summary = crawlingService.crawlAll();
+        CrawlSummary summary = crawlingService.crawlAll();
         return ResponseEntity.ok(Map.of(
                 "articlesAdded", summary.articlesAdded(),
                 "failures", summary.failures()
@@ -44,7 +44,7 @@ public class CrawlController {
             @RequestHeader("X-Crawler-Key") String key) {
         if (!apiKey.equals(key)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        RssCrawlerService.CrawlSummary summary = crawlingService.crawlById(companyId);
+        CrawlSummary summary = crawlingService.crawlById(companyId);
         return ResponseEntity.ok(Map.of(
                 "articlesAdded", summary.articlesAdded(),
                 "failures", summary.failures()
@@ -64,6 +64,7 @@ public class CrawlController {
     public ResponseEntity<Map<String, Object>> repairTags(
             @RequestHeader("X-Crawler-Key") String key) {
         if (!apiKey.equals(key)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
         int count = rssCrawlerService.repairMissingTags();
         return ResponseEntity.ok(Map.of("repairedTagsCount", count));
     }
@@ -74,6 +75,6 @@ public class CrawlController {
         if (!apiKey.equals(key)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         int count = logoCrawlerService.crawlAllLogos();
-        return ResponseEntity.ok(Map.of("updatedLogosCount", count, "status", "success"));
+        return ResponseEntity.ok(Map.of("updatedLogosCount", count));
     }
 }

@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class MediumBlogCrawlerService {
+public class MediumBlogCrawlerService implements BlogCrawler {
 
     private static final int TIMEOUT_MS = 15_000;
     private static final String USER_AGENT =
@@ -43,10 +43,16 @@ public class MediumBlogCrawlerService {
         this.crawlLogRepository = crawlLogRepository;
     }
 
+    @Override
+    public boolean supports(CrawlType type) {
+        return type == CrawlType.MEDIUM_APOLLO;
+    }
+
+    @Override
     @Transactional
-    public RssCrawlerService.CrawlSummary crawlCompany(Company company) {
+    public CrawlSummary crawl(Company company) {
         String blogUrl = company.getBlogUrl();
-        if (blogUrl == null || blogUrl.isBlank()) return RssCrawlerService.CrawlSummary.ZERO;
+        if (blogUrl == null || blogUrl.isBlank()) return CrawlSummary.ZERO;
 
         CrawlLog log = CrawlLog.start(company);
         try {
@@ -57,23 +63,20 @@ public class MediumBlogCrawlerService {
             }
             log.succeed(added);
             crawlLogRepository.save(log);
-            return new RssCrawlerService.CrawlSummary(added, 0);
+            return new CrawlSummary(added, 0);
         } catch (Exception e) {
             log.fail(e.getMessage());
             crawlLogRepository.save(log);
-            return new RssCrawlerService.CrawlSummary(0, 1);
+            return new CrawlSummary(0, 1);
         }
     }
 
     private List<ArticleInfo> fetchArticles(String blogUrl) {
-        // 1. RSS feed fallback (URL-encoded)
         String feedUrl = buildMediumFeedUrl(blogUrl);
         if (feedUrl != null) {
             List<ArticleInfo> rssArticles = fetchFromRss(feedUrl);
             if (!rssArticles.isEmpty()) return rssArticles;
         }
-
-        // 2. Apollo State extraction from HTML
         return fetchFromApolloState(blogUrl);
     }
 
@@ -81,8 +84,7 @@ public class MediumBlogCrawlerService {
         try {
             URI uri = URI.create(encodeNonAscii(blogUrl));
             if (!"medium.com".equals(uri.getHost())) return null;
-            String path = uri.getRawPath();
-            return "https://medium.com/feed" + path;
+            return "https://medium.com/feed" + uri.getRawPath();
         } catch (Exception e) {
             return null;
         }
@@ -114,13 +116,10 @@ public class MediumBlogCrawlerService {
             for (Element script : scripts) {
                 String data = script.data();
                 if (!data.contains("__APOLLO_STATE__")) continue;
-
                 int start = data.indexOf("{");
                 int end = data.lastIndexOf("}");
                 if (start < 0 || end < 0) continue;
-
-                String json = data.substring(start, end + 1);
-                return parseApolloState(json);
+                return parseApolloState(data.substring(start, end + 1));
             }
         } catch (Exception ignored) {}
         return List.of();
@@ -142,24 +141,23 @@ public class MediumBlogCrawlerService {
                 String thumbnail = null;
                 JsonNode previewImage = node.path("previewImage");
                 if (!previewImage.isMissingNode()) {
-                    thumbnail = previewImage.path("id").asText(null);
-                    if (thumbnail != null && !thumbnail.isBlank()) {
-                        thumbnail = "https://miro.medium.com/v2/resize:fit:800/" + thumbnail;
+                    String imageId = previewImage.path("id").asText(null);
+                    if (imageId != null && !imageId.isBlank()) {
+                        thumbnail = "https://miro.medium.com/v2/resize:fit:800/" + imageId;
                     }
                 }
 
-                String summary = node.path("previewContent")
-                        .path("subtitle").asText(null);
+                String summary = node.path("previewContent").path("subtitle").asText(null);
 
-                LocalDateTime publishedAt = null;
+                LocalDateTime publishedAt = LocalDateTime.now();
                 long firstPublishedAt = node.path("firstPublishedAt").asLong(0);
                 if (firstPublishedAt > 0) {
                     publishedAt = LocalDateTime.ofEpochSecond(
-                            firstPublishedAt / 1000, 0, ZoneId.of("UTC").getRules().getOffset(java.time.Instant.now()));
+                            firstPublishedAt / 1000, 0,
+                            ZoneId.of("UTC").getRules().getOffset(java.time.Instant.now()));
                 }
 
-                articles.add(new ArticleInfo(mediumUrl, title, summary, thumbnail,
-                        publishedAt != null ? publishedAt : LocalDateTime.now(), new String[0]));
+                articles.add(new ArticleInfo(mediumUrl, title, summary, thumbnail, publishedAt, new String[0]));
             });
         } catch (Exception ignored) {}
         return articles;
@@ -207,11 +205,8 @@ public class MediumBlogCrawlerService {
     private String encodeNonAscii(String url) {
         StringBuilder sb = new StringBuilder();
         for (char c : url.toCharArray()) {
-            if (c > 127) {
-                sb.append(URLEncoder.encode(String.valueOf(c), StandardCharsets.UTF_8));
-            } else {
-                sb.append(c);
-            }
+            if (c > 127) sb.append(URLEncoder.encode(String.valueOf(c), StandardCharsets.UTF_8));
+            else sb.append(c);
         }
         return sb.toString();
     }

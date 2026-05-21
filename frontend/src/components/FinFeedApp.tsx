@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { COLLECTIONS, SECTORS, CATEGORIES } from '@/data';
 import type { Filters, Collection, Article, Sector, Company } from '@/types';
 import { AppProvider } from '@/context/AppContext';
@@ -13,19 +14,64 @@ import CollectionsSection from './CollectionsSection';
 import Thumbnail from './Thumbnail';
 import { Ic } from './Icons';
 
-export default function FinFeedApp() {
-  const [filters, setFilters] = useState<Filters>({
-    sector: 'all',
-    companies: [],
-    categories: [],
-    date: 'all',
-    collection: null,
-  });
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<'recent' | 'relevance'>('recent');
-  const [view, setView] = useState<'grid' | 'list'>('grid');
-  const [density, setDensity] = useState<'comfortable' | 'dense'>('comfortable');
+type ViewMode = 'card' | 'gallery' | 'list';
 
+export default function FinFeedApp() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // URL에서 파생되는 상태
+  const query    = searchParams.get('q')       ?? '';
+  const sector   = searchParams.get('sector')  ?? 'all';
+  const company  = searchParams.get('company') ?? '';
+  const tag      = searchParams.get('tag')     ?? '';
+  const date     = searchParams.get('date')    ?? 'all';
+  const view     = (searchParams.get('view')   ?? 'card') as ViewMode;
+
+  // URL에 저장하지 않는 로컬 상태
+  const [collection, setCollection] = useState<string | null>(null);
+
+  // URL 파라미터 일괄 업데이트 (기본값은 삭제해 URL을 깔끔하게)
+  const updateParams = useCallback((updates: Record<string, string | null>) => {
+    const p = new URLSearchParams(searchParams.toString());
+    for (const [k, v] of Object.entries(updates)) {
+      if (!v || v === 'all' || v === 'card') p.delete(k);
+      else p.set(k, v);
+    }
+    const qs = p.toString();
+    router.replace(qs ? `?${qs}` : '/', { scroll: false });
+  }, [searchParams, router]);
+
+  // filters 객체: 기존 하위 컴포넌트 인터페이스 유지
+  const filters: Filters = useMemo(() => ({
+    sector,
+    companies: company ? [company] : [],
+    categories: tag ? [tag] : [],
+    date,
+    collection,
+  }), [sector, company, tag, date, collection]);
+
+  // setFilters: Sidebar/ActiveFilters의 기존 호출 방식 유지
+  const setFilters = useCallback((updater: Filters | ((f: Filters) => Filters)) => {
+    const next = typeof updater === 'function' ? updater(filters) : updater;
+    if (next.collection !== collection) setCollection(next.collection);
+    updateParams({
+      sector:  next.sector,
+      company: next.companies[0] ?? null,
+      tag:     next.categories[0] ?? null,
+      date:    next.date,
+    });
+  }, [filters, collection, updateParams]);
+
+  const setQuery = useCallback((q: string) => {
+    updateParams({ q: q || null });
+  }, [updateParams]);
+
+  const setView = useCallback((v: ViewMode) => {
+    updateParams({ view: v });
+  }, [updateParams]);
+
+  // 아티클 데이터
   const [articles, setArticles] = useState<Article[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -53,16 +99,16 @@ export default function FinFeedApp() {
     fetchCompanies().then(setCompanies).catch(console.error);
   }, []);
 
+  // sector/tag/query 변경 시 cursor 자동 초기화 (primitive deps → 안정적)
   const doFetch = useCallback(async (reset: boolean, currentCursor: string | null) => {
     const id = ++fetchRef.current;
     reset ? setLoading(true) : setLoadingMore(true);
 
     try {
-      const tag = filters.categories.length === 1 ? filters.categories[0] : undefined;
       const result = await fetchArticles({
-        sector: filters.sector,
+        sector,
         q: query || undefined,
-        tag,
+        tag: tag || undefined,
         cursor: reset ? undefined : currentCursor ?? undefined,
         size: 30,
       });
@@ -78,7 +124,7 @@ export default function FinFeedApp() {
         setLoadingMore(false);
       }
     }
-  }, [filters.sector, filters.categories, query]);
+  }, [sector, tag, query]);
 
   const loadArticles = useCallback((reset: boolean) => {
     doFetch(reset, reset ? null : cursor);
@@ -101,41 +147,41 @@ export default function FinFeedApp() {
 
   const isSearch = query.length > 0;
   const isFiltered =
-    filters.sector !== 'all' ||
-    filters.companies.length > 0 ||
-    filters.categories.length > 0 ||
-    (!!filters.date && filters.date !== 'all') ||
-    filters.collection !== null;
+    sector !== 'all' ||
+    company !== '' ||
+    tag !== '' ||
+    (!!date && date !== 'all') ||
+    collection !== null;
 
   const showHero = !isSearch && !isFiltered;
 
-  const activeCollection = filters.collection
-    ? COLLECTIONS.find((c) => c.id === filters.collection) ?? null
+  const activeCollection = collection
+    ? COLLECTIONS.find((c) => c.id === collection) ?? null
     : null;
 
   const displayed = useMemo(() => {
     let arr = [...articles];
 
-    if (filters.collection) {
-      const coll = COLLECTIONS.find((c) => c.id === filters.collection);
+    if (collection) {
+      const coll = COLLECTIONS.find((c) => c.id === collection);
       if (coll) arr = arr.filter((a) => coll.article_ids.includes(a.id));
     }
-    if (filters.companies.length > 0) {
-      arr = arr.filter((a) => filters.companies.includes(a.company));
+    if (company) {
+      arr = arr.filter((a) => a.company === company);
     }
-    if (filters.date && filters.date !== 'all') {
+    if (date && date !== 'all') {
       const now = new Date();
       const cutoff = new Date(now);
-      if (filters.date === 'week') cutoff.setDate(now.getDate() - 7);
-      if (filters.date === 'month') cutoff.setMonth(now.getMonth() - 1);
-      if (filters.date === '3month') cutoff.setMonth(now.getMonth() - 3);
+      if (date === 'week') cutoff.setDate(now.getDate() - 7);
+      if (date === 'month') cutoff.setMonth(now.getMonth() - 1);
+      if (date === '3month') cutoff.setMonth(now.getMonth() - 3);
       arr = arr.filter((a) => new Date(a.published_at) >= cutoff);
     }
-    if (sort === 'recent') {
+    if (!isSearch) {
       arr.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
     }
     return arr;
-  }, [articles, filters.companies, filters.date, filters.collection, sort]);
+  }, [articles, company, date, collection, isSearch, query]);
 
   const matchingCollections = useMemo(() => {
     if (!query) return [];
@@ -146,17 +192,24 @@ export default function FinFeedApp() {
   }, [query]);
 
   const openCollection = (coll: Collection) => {
-    setQuery('');
-    setFilters({ sector: 'all', companies: [], categories: [], date: 'all', collection: coll.id });
+    setCollection(coll.id);
+    router.replace('/', { scroll: false });
     document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const onSelectFromSearch = (item: { company?: string; id?: number }) => {
     if (item.company) {
       const c = companyById[item.company];
-      setQuery('');
-      setFilters((f) => ({ ...f, companies: [item.company!], sector: c?.sector ?? f.sector }));
+      const p = new URLSearchParams();
+      p.set('company', item.company);
+      if (c?.sector && c.sector !== 'all') p.set('sector', c.sector);
+      router.replace(`?${p}`, { scroll: false });
     }
+  };
+
+  const onReset = () => {
+    setCollection(null);
+    router.replace('/', { scroll: false });
   };
 
   const featured = articles[0];
@@ -182,8 +235,8 @@ export default function FinFeedApp() {
       </div>
     );
     titleNode = <h1 className="page-title"><span className="ital">&ldquo;{query}&rdquo;</span> 검색 결과</h1>;
-  } else if (filters.sector !== 'all') {
-    const sec = sectorsWithCounts.find((s) => s.id === filters.sector) ?? sectorsWithCounts[0];
+  } else if (sector !== 'all') {
+    const sec = sectorsWithCounts.find((s) => s.id === sector) ?? sectorsWithCounts[0];
     eyebrowNode = (
       <div className="crumb">
         <span>FEED</span><span className="sep">/</span><span>섹터</span><span className="sep">/</span>
@@ -208,16 +261,13 @@ export default function FinFeedApp() {
           query={query}
           setQuery={setQuery}
           onSelect={onSelectFromSearch}
-          onReset={() => {
-            setQuery('');
-            setFilters({ sector: 'all', companies: [], categories: [], date: 'all', collection: null });
-          }}
+          onReset={onReset}
         />
         <Sidebar
           filters={filters}
           setFilters={setFilters}
           sectors={sectorsWithCounts}
-          inCollection={filters.collection !== null}
+          inCollection={collection !== null}
         />
         <main className="main">
           <div className="main-inner">
@@ -239,16 +289,9 @@ export default function FinFeedApp() {
               </div>
               <div className="toolbar">
                 <div className="tbtn-group">
-                  <button className={`tbtn ${sort === 'recent' ? 'active' : ''}`} onClick={() => setSort('recent')}>최신순</button>
-                  <button className={`tbtn ${sort === 'relevance' ? 'active' : ''}`} onClick={() => setSort('relevance')}>관련도</button>
-                </div>
-                <div className="tbtn-group">
-                  <button className={`tbtn ${view === 'grid' ? 'active' : ''}`} onClick={() => setView('grid')}><Ic.grid /></button>
+                  <button className={`tbtn ${view === 'gallery' ? 'active' : ''}`} onClick={() => setView('gallery')}><Ic.gallery /></button>
+                  <button className={`tbtn ${view === 'card' ? 'active' : ''}`} onClick={() => setView('card')}><Ic.grid /></button>
                   <button className={`tbtn ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}><Ic.list /></button>
-                </div>
-                <div className="tbtn-group">
-                  <button className={`tbtn ${density === 'comfortable' ? 'active' : ''}`} onClick={() => setDensity('comfortable')}>2열</button>
-                  <button className={`tbtn ${density === 'dense' ? 'active' : ''}`} onClick={() => setDensity('dense')}>3열</button>
                 </div>
               </div>
             </div>
@@ -339,7 +382,7 @@ export default function FinFeedApp() {
                       <span className="lab">Sync interval</span>
                     </div>
                     <div className="hero-stat">
-                      <span className="num">25</span>
+                      <span className="num">12</span>
                       <span className="lab">Sources monitored</span>
                     </div>
                   </div>
@@ -347,13 +390,13 @@ export default function FinFeedApp() {
               </div>
             )}
 
-            {filters.sector !== 'all' && !isSearch && !activeCollection && (
+            {sector !== 'all' && !isSearch && !activeCollection && (
               <div className="sector-banner">
                 <div className="sb-mark" style={{ background: fSector?.accent, color: '#fff' }}>
-                  {sectorsWithCounts.find((s) => s.id === filters.sector)?.label[0]}
+                  {sectorsWithCounts.find((s) => s.id === sector)?.label[0]}
                 </div>
                 <div className="sb-body">
-                  <h2 className="sb-title">{sectorsWithCounts.find((s) => s.id === filters.sector)?.label} 섹터</h2>
+                  <h2 className="sb-title">{sectorsWithCounts.find((s) => s.id === sector)?.label} 섹터</h2>
                   <p className="sb-desc">
                     {({
                       domestic_bank: '국내 시중·인터넷 은행과 IT 자회사의 코어뱅킹, 인증, 24시간 이체 인프라.',
@@ -361,7 +404,7 @@ export default function FinFeedApp() {
                       domestic_fintech: '결제·송금·마이데이터를 다루는 국내 핀테크 엔지니어링.',
                       crypto: '거래소 매칭, 지갑·키 관리, 블록체인 합의 알고리즘.',
                       global_fintech: 'Stripe, Plaid, Monzo, Revolut 등 글로벌 핀테크의 인프라.',
-                    } as Record<string, string>)[filters.sector]}
+                    } as Record<string, string>)[sector]}
                   </p>
                 </div>
                 <div className="sb-stats">
@@ -370,7 +413,7 @@ export default function FinFeedApp() {
                     <span className="lab">Articles</span>
                   </div>
                   <div className="sb-stat">
-                    <span className="num">{companies.filter((c) => c.sector === filters.sector).length}</span>
+                    <span className="num">{companies.filter((c) => c.sector === sector).length}</span>
                     <span className="lab">Companies</span>
                   </div>
                 </div>
@@ -394,9 +437,9 @@ export default function FinFeedApp() {
                     <span className="sub">{displayed.length} HIT{displayed.length === 1 ? '' : 'S'}</span>
                   </div>
                 )}
-                <div className={`grid ${view === 'list' ? 'list' : density === 'dense' ? 'dense' : ''}`}>
+                <div className={`grid ${view === 'list' ? 'list' : view === 'gallery' ? 'gallery' : ''}`}>
                   {displayed.map((a) => (
-                    <ArticleCard key={a.id} article={a} view={view} query={isSearch ? query : ''} highlightTags={filters.categories} />
+                    <ArticleCard key={a.id} article={a} view={view === 'list' ? 'list' : 'grid'} query={isSearch ? query : ''} highlightTags={filters.categories} />
                   ))}
                 </div>
               </>
