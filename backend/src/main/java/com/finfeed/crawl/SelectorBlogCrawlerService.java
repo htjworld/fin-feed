@@ -94,7 +94,7 @@ public class SelectorBlogCrawlerService implements BlogCrawler {
     private int crawlAdditionalPages(Company company, ParsingSelector selector) {
         int added = 0;
         int page = 2;
-        int maxPages = 5;
+        int maxPages = 20;
         while (page <= maxPages) {
             String pageUrl = buildPageUrl(selector.getBlogUrl(), page);
             List<ArticleInfo> articles = crawlPage(pageUrl, selector);
