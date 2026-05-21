@@ -33,7 +33,5 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     List<Company> findByActiveTrue();
 
-    List<Company> findByActiveTrueAndRssUrlNotNull();
-
     List<Company> findBySectorAndActiveTrue(Sector sector);
 }

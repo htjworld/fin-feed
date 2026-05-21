@@ -3,7 +3,6 @@ package com.finfeed.crawl;
 import com.finfeed.article.Article;
 import com.finfeed.article.ArticleRepository;
 import com.finfeed.company.Company;
-import com.finfeed.company.CompanyRepository;
 import com.rometools.modules.mediarss.MediaEntryModule;
 import com.rometools.modules.mediarss.types.MediaContent;
 import com.rometools.modules.mediarss.types.Thumbnail;
@@ -26,11 +25,15 @@ import java.net.URLConnection;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.LinkedHashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
-public class RssCrawlerService {
+public class RssCrawlerService implements BlogCrawler {
 
-    private final CompanyRepository companyRepository;
     private final ArticleRepository articleRepository;
     private final CrawlLogRepository crawlLogRepository;
 
@@ -40,24 +43,21 @@ public class RssCrawlerService {
     @Value("${crawler.read-timeout-ms:10000}")
     private int readTimeoutMs;
 
-    public RssCrawlerService(CompanyRepository companyRepository,
-                             ArticleRepository articleRepository,
+    public RssCrawlerService(ArticleRepository articleRepository,
                              CrawlLogRepository crawlLogRepository) {
-        this.companyRepository = companyRepository;
         this.articleRepository = articleRepository;
         this.crawlLogRepository = crawlLogRepository;
     }
 
-    @Transactional
-    public CrawlSummary crawlAll() {
-        List<Company> companies = companyRepository.findByActiveTrueAndRssUrlNotNull();
-        return companies.stream()
-                .map(this::crawlCompany)
-                .reduce(CrawlSummary.ZERO, CrawlSummary::merge);
+    @Override
+    public boolean supports(CrawlType type) {
+        return type == CrawlType.RSS;
     }
 
+    @Override
     @Transactional
-    public CrawlSummary crawlCompany(Company company) {
+    public CrawlSummary crawl(Company company) {
+        if (company.getRssUrl() == null) return CrawlSummary.ZERO;
         CrawlLog log = CrawlLog.start(company);
         try {
             SyndFeed feed = fetchFeed(company.getRssUrl());
@@ -106,7 +106,7 @@ public class RssCrawlerService {
         return true;
     }
 
-    private static final java.util.Map<String, String[]> TAG_KEYWORDS = java.util.Map.of(
+    private static final Map<String, String[]> TAG_KEYWORDS = Map.of(
         "payment",    new String[]{"결제","송금","payment","pg","간편결제","이체","정산","환불","청구"},
         "security",   new String[]{"보안","security","인증","auth","암호","취약점","fraud","사기","zero-trust"},
         "mydata",     new String[]{"마이데이터","mydata","오픈뱅킹","openbanking","계좌연동"},
@@ -120,7 +120,7 @@ public class RssCrawlerService {
     );
 
     private String[] extractTags(SyndEntry entry) {
-        java.util.Set<String> tags = new java.util.LinkedHashSet<>();
+        Set<String> tags = new LinkedHashSet<>();
         entry.getCategories().stream()
                 .filter(cat -> cat.getName() != null && !cat.getName().isBlank())
                 .map(cat -> cat.getName().trim().toLowerCase())
@@ -159,9 +159,7 @@ public class RssCrawlerService {
         MediaEntryModule media = (MediaEntryModule) entry.getModule(MediaEntryModule.URI);
         if (media != null) {
             for (MediaContent content : media.getMediaContents()) {
-                if (content.getReference() != null) {
-                    return content.getReference().toString();
-                }
+                if (content.getReference() != null) return content.getReference().toString();
             }
             if (media.getMetadata() != null) {
                 Thumbnail[] thumbnails = media.getMetadata().getThumbnail();
@@ -171,9 +169,7 @@ public class RssCrawlerService {
             }
         }
         for (SyndEnclosure enc : entry.getEnclosures()) {
-            if (enc.getType() != null && enc.getType().startsWith("image/")) {
-                return enc.getUrl();
-            }
+            if (enc.getType() != null && enc.getType().startsWith("image/")) return enc.getUrl();
         }
         return null;
     }
@@ -190,10 +186,10 @@ public class RssCrawlerService {
 
     private String fetchThumbnailFromHtml(String url) {
         if (url == null || url.isBlank()) return null;
-        if (isMediumUrl(url)) return fetchThumbnailViaJina(url);
+        if (url.contains("medium.com")) return fetchThumbnailViaJina(url);
         try {
             Document doc = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                     .timeout(10_000)
                     .followRedirects(true)
                     .get();
@@ -217,10 +213,6 @@ public class RssCrawlerService {
         return null;
     }
 
-    private boolean isMediumUrl(String url) {
-        return url.contains("medium.com");
-    }
-
     private String fetchThumbnailViaJina(String url) {
         try {
             String cleanUrl = url.contains("?source=rss") ? url.substring(0, url.indexOf("?source=rss")) : url;
@@ -231,16 +223,12 @@ public class RssCrawlerService {
             conn.setConnectTimeout(10_000);
             conn.setReadTimeout(20_000);
             String body = new String(conn.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-            java.util.regex.Matcher m = java.util.regex.Pattern
-                    .compile("https://miro\\.medium\\.com/v2/resize:fit:[^\\s)]+")
-                    .matcher(body);
+            Matcher m = Pattern.compile("https://miro\\.medium\\.com/v2/resize:fit:[^\\s)]+").matcher(body);
             while (m.find()) {
                 String img = m.group();
                 if (!img.contains("32:32")) return img;
             }
-        } catch (Exception e) {
-            System.err.println("[Jina.ai] failed for " + url + ": " + e.getMessage());
-        }
+        } catch (Exception ignored) {}
         return null;
     }
 
@@ -248,23 +236,25 @@ public class RssCrawlerService {
         if (imageUrl == null || imageUrl.isBlank()) return null;
         if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) return imageUrl;
         try {
-            java.net.URI base = java.net.URI.create(pageUrl);
+            URI base = URI.create(pageUrl);
             return base.getScheme() + "://" + base.getHost() + (imageUrl.startsWith("/") ? imageUrl : "/" + imageUrl);
         } catch (Exception ignored) { return imageUrl; }
     }
 
     private boolean isUsableImage(String url) {
-        if (url == null || url.isBlank()) return false;
-        if (!url.startsWith("http")) return false;
+        if (url == null || url.isBlank() || !url.startsWith("http")) return false;
         String lower = url.toLowerCase();
-        return !lower.contains("logo") && !lower.contains("icon") && !lower.contains("og_gray") && !lower.contains("placeholder");
+        return !lower.contains("logo") && !lower.contains("icon")
+                && !lower.contains("og_gray") && !lower.contains("placeholder");
     }
+
+    // --- Repair utilities (called directly from CrawlController) ---
 
     @Transactional
     public int repairMissingTags() {
-        List<com.finfeed.article.Article> articles = articleRepository.findAll();
+        List<Article> articles = articleRepository.findAll();
         int count = 0;
-        for (com.finfeed.article.Article article : articles) {
+        for (Article article : articles) {
             String[] existing = article.getTags();
             if (existing != null && existing.length > 0) continue;
             String text = (article.getTitle() == null ? "" : article.getTitle()) + " " +
@@ -280,7 +270,7 @@ public class RssCrawlerService {
     }
 
     private String[] applyKeywordTags(String text) {
-        java.util.Set<String> tags = new java.util.LinkedHashSet<>();
+        Set<String> tags = new LinkedHashSet<>();
         TAG_KEYWORDS.forEach((tag, keywords) -> {
             for (String kw : keywords) {
                 if (text.contains(kw)) { tags.add(tag); break; }
@@ -302,16 +292,5 @@ public class RssCrawlerService {
             }
         }
         return count;
-    }
-
-    public record CrawlSummary(int articlesAdded, int failures) {
-        static final CrawlSummary ZERO = new CrawlSummary(0, 0);
-
-        CrawlSummary merge(CrawlSummary other) {
-            return new CrawlSummary(
-                    this.articlesAdded + other.articlesAdded,
-                    this.failures + other.failures
-            );
-        }
     }
 }

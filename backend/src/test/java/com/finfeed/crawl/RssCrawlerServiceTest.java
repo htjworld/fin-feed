@@ -4,26 +4,20 @@ import com.finfeed.article.Article;
 import com.finfeed.article.ArticleRepository;
 import com.finfeed.company.Company;
 import com.finfeed.company.CompanyMother;
-import com.finfeed.company.CompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class RssCrawlerServiceTest {
 
-    @Mock
-    private CompanyRepository companyRepository;
     @Mock
     private ArticleRepository articleRepository;
     @Mock
@@ -33,25 +27,22 @@ class RssCrawlerServiceTest {
 
     @BeforeEach
     void setUp() {
-        rssCrawlerService = new RssCrawlerService(companyRepository, articleRepository, crawlLogRepository);
+        rssCrawlerService = new RssCrawlerService(articleRepository, crawlLogRepository);
     }
 
     @Test
-    void crawlAll_returnsZeroWhenNoCompaniesWithRss() {
-        given(companyRepository.findByActiveTrueAndRssUrlNotNull()).willReturn(List.of());
-
-        RssCrawlerService.CrawlSummary summary = rssCrawlerService.crawlAll();
-
-        assertThat(summary.articlesAdded()).isZero();
-        assertThat(summary.failures()).isZero();
+    void supports_onlyRssType() {
+        assertThat(rssCrawlerService.supports(CrawlType.RSS)).isTrue();
+        assertThat(rssCrawlerService.supports(CrawlType.MEDIUM_APOLLO)).isFalse();
+        assertThat(rssCrawlerService.supports(CrawlType.CSS_SELECTOR)).isFalse();
+        assertThat(rssCrawlerService.supports(CrawlType.NONE)).isFalse();
     }
 
     @Test
-    void crawlAll_countsFailureWhenCompanyCrawlFails() {
+    void crawl_countsFailureWhenRssFetchFails() {
         Company company = CompanyMother.withRssUrl("https://invalid-rss-that-does-not-exist.example.com/feed");
-        given(companyRepository.findByActiveTrueAndRssUrlNotNull()).willReturn(List.of(company));
 
-        RssCrawlerService.CrawlSummary summary = rssCrawlerService.crawlAll();
+        CrawlSummary summary = rssCrawlerService.crawl(company);
 
         assertThat(summary.failures()).isEqualTo(1);
         assertThat(summary.articlesAdded()).isZero();
@@ -60,10 +51,10 @@ class RssCrawlerServiceTest {
 
     @Test
     void crawlSummary_mergesCombinesResults() {
-        RssCrawlerService.CrawlSummary a = new RssCrawlerService.CrawlSummary(5, 1);
-        RssCrawlerService.CrawlSummary b = new RssCrawlerService.CrawlSummary(3, 2);
+        CrawlSummary a = new CrawlSummary(5, 1);
+        CrawlSummary b = new CrawlSummary(3, 2);
 
-        RssCrawlerService.CrawlSummary merged = a.merge(b);
+        CrawlSummary merged = CrawlSummary.merge(a, b);
 
         assertThat(merged.articlesAdded()).isEqualTo(8);
         assertThat(merged.failures()).isEqualTo(3);
@@ -71,21 +62,21 @@ class RssCrawlerServiceTest {
 
     @Test
     void crawlSummary_zeroIsIdentityForMerge() {
-        RssCrawlerService.CrawlSummary summary = new RssCrawlerService.CrawlSummary(10, 2);
+        CrawlSummary summary = new CrawlSummary(10, 2);
 
-        RssCrawlerService.CrawlSummary merged = RssCrawlerService.CrawlSummary.ZERO.merge(summary);
+        CrawlSummary merged = CrawlSummary.merge(CrawlSummary.ZERO, summary);
 
         assertThat(merged.articlesAdded()).isEqualTo(10);
         assertThat(merged.failures()).isEqualTo(2);
     }
 
     @Test
-    void crawlCompany_skipsExistingArticle() {
-        Company company = CompanyMother.withRssUrl("https://invalid-rss-that-does-not-exist.example.com/feed");
-        given(companyRepository.findByActiveTrueAndRssUrlNotNull()).willReturn(List.of(company));
+    void crawl_skipsWhenRssUrlIsNull() {
+        Company company = CompanyMother.withRssUrl(null);
 
-        rssCrawlerService.crawlAll();
+        CrawlSummary summary = rssCrawlerService.crawl(company);
 
+        assertThat(summary).isEqualTo(CrawlSummary.ZERO);
         verify(articleRepository, never()).save(any(Article.class));
     }
 }

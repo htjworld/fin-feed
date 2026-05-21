@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class SelectorBlogCrawlerService {
+public class SelectorBlogCrawlerService implements BlogCrawler {
 
     private static final int TIMEOUT_MS = 10_000;
     private static final String USER_AGENT =
@@ -33,11 +33,16 @@ public class SelectorBlogCrawlerService {
         this.crawlLogRepository = crawlLogRepository;
     }
 
+    @Override
+    public boolean supports(CrawlType type) {
+        return type == CrawlType.CSS_SELECTOR;
+    }
+
+    @Override
     @Transactional
-    public RssCrawlerService.CrawlSummary crawlCompany(Company company) {
-        ParsingSelector selector = parsingSelectorRepository.findByCompanyId(company.getId())
-                .orElse(null);
-        if (selector == null) return RssCrawlerService.CrawlSummary.ZERO;
+    public CrawlSummary crawl(Company company) {
+        ParsingSelector selector = parsingSelectorRepository.findByCompanyId(company.getId()).orElse(null);
+        if (selector == null) return CrawlSummary.ZERO;
 
         CrawlLog log = CrawlLog.start(company);
         try {
@@ -46,19 +51,17 @@ public class SelectorBlogCrawlerService {
             for (ArticleInfo info : articles) {
                 if (saveArticle(company, info)) added++;
             }
-
             if ("NEXT_BUTTON".equals(selector.getPaginationType())
                     || "URL_PARAMETER".equals(selector.getPaginationType())) {
                 added += crawlAdditionalPages(company, selector);
             }
-
             log.succeed(added);
             crawlLogRepository.save(log);
-            return new RssCrawlerService.CrawlSummary(added, 0);
+            return new CrawlSummary(added, 0);
         } catch (Exception e) {
             log.fail(e.getMessage());
             crawlLogRepository.save(log);
-            return new RssCrawlerService.CrawlSummary(0, 1);
+            return new CrawlSummary(0, 1);
         }
     }
 
@@ -78,16 +81,12 @@ public class SelectorBlogCrawlerService {
     private List<ArticleInfo> parseArticles(Document doc, ParsingSelector selector, String baseUrl) {
         Elements items = doc.select(selector.getArticleSelector());
         List<ArticleInfo> articles = new ArrayList<>();
-
         for (Element item : items) {
             String title = extractText(item, selector.getTitleSelector());
-            String link = extractLink(item, selector.getLinkSelector(), baseUrl);
-            String thumbnail = extractAttr(item, selector.getThumbnailSelector(), "src", "data-src");
-            String dateText = extractText(item, selector.getDateSelector());
-
+            String link  = extractLink(item, selector.getLinkSelector(), baseUrl);
+            String thumb = extractAttr(item, selector.getThumbnailSelector(), "src", "data-src");
             if (title == null || title.isBlank() || link == null) continue;
-            articles.add(new ArticleInfo(link, title, null, thumbnail,
-                    parseDate(dateText), new String[0]));
+            articles.add(new ArticleInfo(link, title, null, thumb, LocalDateTime.now(), new String[0]));
         }
         return articles;
     }
@@ -96,18 +95,13 @@ public class SelectorBlogCrawlerService {
         int added = 0;
         int page = 2;
         int maxPages = 5;
-
         while (page <= maxPages) {
             String pageUrl = buildPageUrl(selector.getBlogUrl(), page);
             List<ArticleInfo> articles = crawlPage(pageUrl, selector);
             if (articles.isEmpty()) break;
-
             boolean anyNew = false;
             for (ArticleInfo info : articles) {
-                if (saveArticle(company, info)) {
-                    added++;
-                    anyNew = true;
-                }
+                if (saveArticle(company, info)) { added++; anyNew = true; }
             }
             if (!anyNew) break;
             page++;
@@ -116,8 +110,7 @@ public class SelectorBlogCrawlerService {
     }
 
     private String buildPageUrl(String baseUrl, int page) {
-        if (baseUrl.contains("?")) return baseUrl + "&page=" + page;
-        return baseUrl + "?page=" + page;
+        return baseUrl.contains("?") ? baseUrl + "&page=" + page : baseUrl + "?page=" + page;
     }
 
     private String extractText(Element parent, String selector) {
@@ -137,9 +130,7 @@ public class SelectorBlogCrawlerService {
             try {
                 java.net.URI base = new java.net.URI(baseUrl);
                 return base.getScheme() + "://" + base.getHost() + href;
-            } catch (Exception e) {
-                return href;
-            }
+            } catch (Exception e) { return href; }
         }
         return href;
     }
@@ -153,10 +144,6 @@ public class SelectorBlogCrawlerService {
             if (!val.isBlank()) return val;
         }
         return null;
-    }
-
-    private LocalDateTime parseDate(String text) {
-        return LocalDateTime.now();
     }
 
     private boolean saveArticle(Company company, ArticleInfo info) {

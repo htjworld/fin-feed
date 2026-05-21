@@ -4,6 +4,7 @@ import com.finfeed.article.dto.ArticleFilter;
 import com.finfeed.article.dto.ArticlePageResponse;
 import com.finfeed.article.dto.ArticleResponse;
 import com.finfeed.article.dto.CursorPage;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ public class ArticleService {
         this.articleRepository = articleRepository;
     }
 
+    @Cacheable(cacheNames = "articles", key = "#filter")
     public ArticlePageResponse findArticles(ArticleFilter filter) {
         CursorPage cursor = CursorPage.decode(filter.cursor());
         List<Article> fetched = articleRepository.findWithFilter(filter, cursor);

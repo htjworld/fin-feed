@@ -39,7 +39,8 @@ logos:
 
 crawler:
   api-key: ${CRAWLER_API_KEY:dev-key}
-  schedule:
-    cron: "0 0 */6 * * *"
   connection-timeout-ms: 10000
   read-timeout-ms: 10000
+
+app:
+  use-fts: true

@@ -1,6 +1,7 @@
 package com.finfeed.company;
 
 import com.finfeed.company.dto.CompanyResponse;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ public class CompanyService {
         this.companyRepository = companyRepository;
     }
 
+    @Cacheable(cacheNames = "companies", key = "#sector ?: 'all'")
     public List<CompanyResponse> findAll(String sector) {
         List<Object[]> rows = sector == null
                 ? companyRepository.findAllWithArticleCount()
