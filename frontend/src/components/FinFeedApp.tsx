@@ -22,9 +22,7 @@ export default function FinFeedApp() {
     collection: null,
   });
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<'recent' | 'relevance'>('recent');
-  const [view, setView] = useState<'grid' | 'list'>('grid');
-  const [density, setDensity] = useState<'comfortable' | 'dense'>('comfortable');
+  const [view, setView] = useState<'card' | 'gallery' | 'list'>('card');
 
   const [articles, setArticles] = useState<Article[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -131,11 +129,11 @@ export default function FinFeedApp() {
       if (filters.date === '3month') cutoff.setMonth(now.getMonth() - 3);
       arr = arr.filter((a) => new Date(a.published_at) >= cutoff);
     }
-    if (sort === 'recent') {
+    if (!isSearch) {
       arr.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
     }
     return arr;
-  }, [articles, filters.companies, filters.date, filters.collection, sort]);
+  }, [articles, filters.companies, filters.date, filters.collection, query]);
 
   const matchingCollections = useMemo(() => {
     if (!query) return [];
@@ -239,16 +237,9 @@ export default function FinFeedApp() {
               </div>
               <div className="toolbar">
                 <div className="tbtn-group">
-                  <button className={`tbtn ${sort === 'recent' ? 'active' : ''}`} onClick={() => setSort('recent')}>최신순</button>
-                  <button className={`tbtn ${sort === 'relevance' ? 'active' : ''}`} onClick={() => setSort('relevance')}>관련도</button>
-                </div>
-                <div className="tbtn-group">
-                  <button className={`tbtn ${view === 'grid' ? 'active' : ''}`} onClick={() => setView('grid')}><Ic.grid /></button>
+                  <button className={`tbtn ${view === 'gallery' ? 'active' : ''}`} onClick={() => setView('gallery')}><Ic.gallery /></button>
+                  <button className={`tbtn ${view === 'card' ? 'active' : ''}`} onClick={() => setView('card')}><Ic.grid /></button>
                   <button className={`tbtn ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}><Ic.list /></button>
-                </div>
-                <div className="tbtn-group">
-                  <button className={`tbtn ${density === 'comfortable' ? 'active' : ''}`} onClick={() => setDensity('comfortable')}>2열</button>
-                  <button className={`tbtn ${density === 'dense' ? 'active' : ''}`} onClick={() => setDensity('dense')}>3열</button>
                 </div>
               </div>
             </div>
@@ -394,9 +385,9 @@ export default function FinFeedApp() {
                     <span className="sub">{displayed.length} HIT{displayed.length === 1 ? '' : 'S'}</span>
                   </div>
                 )}
-                <div className={`grid ${view === 'list' ? 'list' : density === 'dense' ? 'dense' : ''}`}>
+                <div className={`grid ${view === 'list' ? 'list' : view === 'gallery' ? 'gallery' : ''}`}>
                   {displayed.map((a) => (
-                    <ArticleCard key={a.id} article={a} view={view} query={isSearch ? query : ''} highlightTags={filters.categories} />
+                    <ArticleCard key={a.id} article={a} view={view === 'list' ? 'list' : 'grid'} query={isSearch ? query : ''} highlightTags={filters.categories} />
                   ))}
                 </div>
               </>
