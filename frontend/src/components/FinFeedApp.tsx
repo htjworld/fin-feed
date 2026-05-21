@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { COLLECTIONS, SECTORS, CATEGORIES } from '@/data';
 import type { Filters, Collection, Article, Sector, Company } from '@/types';
 import { AppProvider } from '@/context/AppContext';
-import { fetchArticles, fetchCompanies } from '@/api/finfeed';
+import { fetchArticles, fetchCompanies, fetchArticleCount } from '@/api/finfeed';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import ArticleCard from './ArticleCard';
@@ -75,6 +75,7 @@ export default function FinFeedApp() {
   // 아티클 데이터
   const [articles, setArticles] = useState<Article[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [dbArticleCount, setDbArticleCount] = useState<number | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -99,6 +100,7 @@ export default function FinFeedApp() {
 
   useEffect(() => {
     fetchCompanies().then(setCompanies).catch(console.error);
+    fetchArticleCount().then(setDbArticleCount).catch(console.error);
   }, []);
 
   // sector/tag/query 변경 시 cursor 자동 초기화 (primitive deps → 안정적)
@@ -374,11 +376,11 @@ export default function FinFeedApp() {
                   </div>
                   <div className="hero-stats">
                     <div className="hero-stat">
-                      <span className="num">{totalCount.toLocaleString()}</span>
+                      <span className="num">{(dbArticleCount ?? totalCount).toLocaleString()}</span>
                       <span className="lab">Articles indexed</span>
                     </div>
                     <div className="hero-stat">
-                      <span className="num">{companies.filter((c) => c.count > 0).length}</span>
+                      <span className="num">{companies.length}</span>
                       <span className="lab">Companies tracked</span>
                     </div>
                     <div className="hero-stat">

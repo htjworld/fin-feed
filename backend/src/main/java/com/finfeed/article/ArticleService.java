@@ -20,6 +20,10 @@ public class ArticleService {
         this.articleRepository = articleRepository;
     }
 
+    public long countAll() {
+        return articleRepository.count();
+    }
+
     @Cacheable(cacheNames = "articles", key = "#filter")
     public ArticlePageResponse findArticles(ArticleFilter filter) {
         CursorPage cursor = CursorPage.decode(filter.cursor());
