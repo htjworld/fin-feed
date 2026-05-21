@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import type { Article, Company, Sector } from '@/types';
 import { THUMB_BG } from '@/data';
 import { Ic } from './Icons';
@@ -14,6 +14,7 @@ type Props = {
 export default function Thumbnail({ article, company, sector }: Props) {
   const grad = (THUMB_BG[company.sector] || ['#0E3B30', '#15554A']) as [string, string];
   const tier = article.thumb_tier;
+  const [thumbFailed, setThumbFailed] = useState(false);
 
   const corner = (
     <div className="thumb-corner">
@@ -28,9 +29,10 @@ export default function Thumbnail({ article, company, sector }: Props) {
     </div>
   );
 
-  if ((tier === 1 || tier === 2) && article.thumb_url) {
+  if ((tier === 1 || tier === 2) && article.thumb_url && !thumbFailed) {
     return (
       <div className="thumb thumb-img" style={{ '--g1': grad[0], '--g2': grad[1] } as React.CSSProperties}>
+        <img src={article.thumb_url} style={{ display: 'none' }} onError={() => setThumbFailed(true)} alt="" />
         <div className="thumb-bg" style={{ backgroundImage: `url(${article.thumb_url})` }} />
         <div className="thumb-scrim" />
         {corner}

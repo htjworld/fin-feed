@@ -11,6 +11,7 @@ import ArticleCard from './ArticleCard';
 import ActiveFilters from './ActiveFilters';
 import CollectionCard from './CollectionCard';
 import CollectionsSection from './CollectionsSection';
+import DbCollectionsSection from './DbCollectionsSection';
 import Thumbnail from './Thumbnail';
 import { Ic } from './Icons';
 
@@ -78,6 +79,7 @@ export default function FinFeedApp() {
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   const fetchRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -102,6 +104,7 @@ export default function FinFeedApp() {
   // sector/tag/query 변경 시 cursor 자동 초기화 (primitive deps → 안정적)
   const doFetch = useCallback(async (reset: boolean, currentCursor: string | null) => {
     const id = ++fetchRef.current;
+    if (reset) setFetchError(false);
     reset ? setLoading(true) : setLoadingMore(true);
 
     try {
@@ -118,6 +121,7 @@ export default function FinFeedApp() {
       setHasNext(result.hasNext);
     } catch (e) {
       console.error(e);
+      if (fetchRef.current === id) setFetchError(true);
     } finally {
       if (fetchRef.current === id) {
         setLoading(false);
@@ -424,6 +428,18 @@ export default function FinFeedApp() {
               <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--ink-4)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
                 LOADING…
               </div>
+            ) : fetchError ? (
+              <div className="empty">
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>서버에 연결할 수 없습니다</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 20 }}>잠시 후 다시 시도해주세요. 서버가 준비 중일 수 있습니다.</div>
+                <button
+                  className="hbtn"
+                  onClick={() => doFetch(true, null)}
+                  style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                >
+                  다시 시도
+                </button>
+              </div>
             ) : displayed.length === 0 ? (
               <div className="empty">
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>결과 없음</div>
@@ -464,7 +480,10 @@ export default function FinFeedApp() {
             )}
 
             {!isSearch && !isFiltered && (
-              <CollectionsSection onOpen={openCollection} />
+              <>
+                <DbCollectionsSection />
+                <CollectionsSection onOpen={openCollection} />
+              </>
             )}
           </div>
         </main>
