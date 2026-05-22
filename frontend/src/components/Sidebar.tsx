@@ -1,5 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { CATEGORIES } from '@/data';
 import { GOAT_COLLECTIONS } from '@/data/goat-collections';
 import type { Filters, Sector } from '@/types';
@@ -11,13 +13,14 @@ type Props = {
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   sectors: Sector[];
   inCollection?: boolean;
-  activeGoatId?: string | null;
-  onGoatSelect?: (id: string) => void;
 };
 
-export default function Sidebar({ filters, setFilters, sectors, inCollection = false, activeGoatId, onGoatSelect }: Props) {
+export default function Sidebar({ filters, setFilters, sectors, inCollection = false }: Props) {
   const { companies, totalCount } = useApp();
   const [expandCompanies, setExpandCompanies] = useState(false);
+  const pathname = usePathname();
+
+  const activeGoatNum = pathname.match(/^\/collections\/(\d+)$/)?.[1] ?? null;
 
   const visibleCompanies = useMemo(() => {
     let cs = companies;
@@ -45,16 +48,16 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
     <div className="side-section">
       <div className="side-label">★ GOAT 컬렉션 <span className="count">GOAT</span></div>
       <div className="goat-sidebar-list">
-        {GOAT_COLLECTIONS.map((c) => (
-          <button
+        {GOAT_COLLECTIONS.map((c, i) => (
+          <Link
             key={c.id}
-            className={`goat-sidebar-item ${activeGoatId === c.id ? 'active' : ''}`}
-            onClick={() => onGoatSelect?.(c.id)}
+            href={`/collections/${i + 1}`}
+            className={`goat-sidebar-item ${activeGoatNum === String(i + 1) ? 'active' : ''}`}
           >
             <span className="goat-sidebar-num">{c.number}</span>
             <span className="goat-sidebar-name">{c.title}</span>
             <span className="goat-sidebar-count">{c.articles.length}</span>
-          </button>
+          </Link>
         ))}
       </div>
     </div>
@@ -84,8 +87,6 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
 
   return (
     <aside className="sidebar">
-      <GoatSection />
-
       <div className="side-section">
         <div className="side-label">섹터 <span className="count">SECTOR</span></div>
         <div className="sector-list">
@@ -152,6 +153,9 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
           ))}
         </div>
       </div>
+
+      {/* ★ GOAT 컬렉션 — 카테고리 아래, 기간 위 */}
+      <GoatSection />
 
       <div className="side-section">
         <div className="side-label">기간 <span className="count">DATE</span></div>
