@@ -8,9 +8,11 @@ type Props = {
   setQuery: (q: string) => void;
   onSelect: (item: { company?: string; id?: number }) => void;
   onReset: () => void;
+  onFilterOpen: () => void;
+  filterOpen: boolean;
 };
 
-export default function Header({ query, setQuery, onSelect, onReset }: Props) {
+export default function Header({ query, setQuery, onSelect, onReset, onFilterOpen, filterOpen }: Props) {
   const { companies, companyById } = useApp();
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -94,13 +96,17 @@ export default function Header({ query, setQuery, onSelect, onReset }: Props) {
         </div>
       </div>
       <div className="header-right">
-        <button className="hbtn">
+        <button className="hbtn mobile-filter-btn" onClick={onFilterOpen} style={filterOpen ? { background: 'var(--brand-tint)', color: 'var(--brand)' } : undefined}>
+          <Ic.filter />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>필터</span>
+        </button>
+        <button className="hbtn desktop-only">
           <span className="live-dot" />
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>LIVE · 6h sync</span>
         </button>
-        <button className="hbtn"><Ic.rss /></button>
-        <button className="hbtn"><Ic.bell /></button>
-        <button className="hbtn primary">로그인</button>
+        <button className="hbtn desktop-only"><Ic.rss /></button>
+        <button className="hbtn desktop-only"><Ic.bell /></button>
+        <button className="hbtn primary desktop-only">로그인</button>
       </div>
     </header>
   );

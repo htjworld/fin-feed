@@ -144,7 +144,7 @@ export default async function GoatCollectionPage({
           }}>
             {collection.title}
           </h1>
-          <p style={{
+          <div style={{
             fontSize: 14.5,
             lineHeight: 1.6,
             color: 'rgba(255,255,255,.78)',
@@ -152,8 +152,10 @@ export default async function GoatCollectionPage({
             maxWidth: '60ch',
             position: 'relative',
           }}>
-            {collection.desc}
-          </p>
+            {collection.desc.split('\n').map((line, i) => (
+              <p key={i} style={{ margin: i > 0 ? '0.5em 0 0' : 0 }}>{line}</p>
+            ))}
+          </div>
           <div style={{
             display: 'flex',
             alignItems: 'baseline',

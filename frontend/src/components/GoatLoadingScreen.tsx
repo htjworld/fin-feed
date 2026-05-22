@@ -57,9 +57,26 @@ export default function GoatLoadingScreen() {
             onClick={() => handleClick(c)}
           >
             <div className="goat-card-bg" />
-            <div className="goat-card-num">★ COLLECTION · {c.number}</div>
+            <div className="goat-card-num">
+              ★ COLLECTION · {c.number}
+              <span style={{
+                marginLeft: 'auto',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '0.08em',
+                background: 'rgba(255,255,255,.15)',
+                border: '1px solid rgba(255,255,255,.25)',
+                borderRadius: 4,
+                padding: '2px 6px',
+                color: 'rgba(255,255,255,.8)',
+              }}>GOAT</span>
+            </div>
             <h3 className="goat-card-title">{c.title}</h3>
-            <p className="goat-card-desc">{c.desc}</p>
+            <div className="goat-card-desc">
+              {c.desc.split('\n').map((line, i) => (
+                <span key={i} style={{ display: 'block', ...(i > 0 ? { marginTop: '0.45em' } : {}) }}>{line}</span>
+              ))}
+            </div>
             <div className="goat-card-footer">
               <span className="goat-card-count">
                 <span className="num">{c.articles.length}</span>

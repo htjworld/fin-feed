@@ -13,9 +13,11 @@ type Props = {
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   sectors: Sector[];
   inCollection?: boolean;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 };
 
-export default function Sidebar({ filters, setFilters, sectors, inCollection = false }: Props) {
+export default function Sidebar({ filters, setFilters, sectors, inCollection = false, mobileOpen = false, onMobileClose }: Props) {
   const { companies, totalCount } = useApp();
   const [expandCompanies, setExpandCompanies] = useState(false);
   const pathname = usePathname();
@@ -30,15 +32,20 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
 
   const shownCompanies = expandCompanies ? visibleCompanies : visibleCompanies.slice(0, 8);
 
+  const applyFilter: typeof setFilters = (updater) => {
+    setFilters(updater);
+    onMobileClose?.();
+  };
+
   const toggleCompany = (id: string) => {
-    setFilters((f) => ({
+    applyFilter((f) => ({
       ...f,
       companies: f.companies.includes(id) ? [] : [id],
     }));
   };
 
   const toggleCategory = (id: string) => {
-    setFilters((f) => ({
+    applyFilter((f) => ({
       ...f,
       categories: f.categories.includes(id) ? [] : [id],
     }));
@@ -65,7 +72,7 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
 
   if (inCollection) {
     return (
-      <aside className="sidebar">
+      <aside className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}>
         <GoatSection />
         <div className="side-section" style={{ padding: '24px 18px' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--brand)', letterSpacing: '.06em', marginBottom: 10 }}>
@@ -75,7 +82,7 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
             큐레이션 컬렉션 뷰<br />섹터·회사 필터는<br />일반 피드에서 사용하세요.
           </div>
           <button
-            onClick={() => setFilters((f) => ({ ...f, collection: null }))}
+            onClick={() => { setFilters((f) => ({ ...f, collection: null })); onMobileClose?.(); }}
             style={{ marginTop: 16, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', background: 'transparent', border: '1px solid var(--line)', borderRadius: 6, padding: '7px 12px', cursor: 'pointer', width: '100%' }}
           >
             ← 피드로 돌아가기
@@ -86,7 +93,7 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
   }
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}>
       <div className="side-section">
         <div className="side-label">섹터 <span className="count">SECTOR</span></div>
         <div className="sector-list">
@@ -94,7 +101,7 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
             <button
               key={s.id}
               className={`sector-item ${filters.sector === s.id ? 'active' : ''}`}
-              onClick={() => setFilters((f) => ({ ...f, sector: s.id, companies: [] }))}
+              onClick={() => applyFilter((f) => ({ ...f, sector: s.id, companies: [] }))}
             >
               <span className="sec-dot" style={{ background: s.accent || 'var(--ink-3)' }} />
               <span className="sec-name">{s.label}</span>
@@ -169,7 +176,7 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
             <button
               key={d.id}
               className={`sector-item ${filters.date === d.id ? 'active' : ''}`}
-              onClick={() => setFilters((f) => ({ ...f, date: d.id }))}
+              onClick={() => applyFilter((f) => ({ ...f, date: d.id }))}
               style={{ height: 28, fontSize: 13 }}
             >
               <span className="sec-name">{d.label}</span>

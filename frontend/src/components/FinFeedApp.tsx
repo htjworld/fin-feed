@@ -29,6 +29,7 @@ export default function FinFeedApp() {
   const view     = (searchParams.get('view')   ?? 'card') as ViewMode;
 
   const [collection, setCollection] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Loading screen state
   const [showLoadingScreen, setShowLoadingScreen] = useState(true);
@@ -274,12 +275,20 @@ export default function FinFeedApp() {
           setQuery={setQuery}
           onSelect={onSelectFromSearch}
           onReset={onReset}
+          onFilterOpen={() => setSidebarOpen((v) => !v)}
+          filterOpen={sidebarOpen}
+        />
+        <div
+          className={`sidebar-backdrop${sidebarOpen ? ' visible' : ''}`}
+          onClick={() => setSidebarOpen(false)}
         />
         <Sidebar
           filters={filters}
           setFilters={setFilters}
           sectors={sectorsWithCounts}
           inCollection={collection !== null}
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
         />
         <main className="main">
           <div className="main-inner">
