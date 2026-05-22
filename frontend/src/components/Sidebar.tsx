@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { CATEGORIES } from '@/data';
+import { GOAT_COLLECTIONS } from '@/data/goat-collections';
 import type { Filters, Sector } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { Ic } from './Icons';
@@ -10,9 +11,11 @@ type Props = {
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   sectors: Sector[];
   inCollection?: boolean;
+  activeGoatId?: string | null;
+  onGoatSelect?: (id: string) => void;
 };
 
-export default function Sidebar({ filters, setFilters, sectors, inCollection = false }: Props) {
+export default function Sidebar({ filters, setFilters, sectors, inCollection = false, activeGoatId, onGoatSelect }: Props) {
   const { companies, totalCount } = useApp();
   const [expandCompanies, setExpandCompanies] = useState(false);
 
@@ -38,9 +41,29 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
     }));
   };
 
+  const GoatSection = () => (
+    <div className="side-section">
+      <div className="side-label">★ GOAT 컬렉션 <span className="count">GOAT</span></div>
+      <div className="goat-sidebar-list">
+        {GOAT_COLLECTIONS.map((c) => (
+          <button
+            key={c.id}
+            className={`goat-sidebar-item ${activeGoatId === c.id ? 'active' : ''}`}
+            onClick={() => onGoatSelect?.(c.id)}
+          >
+            <span className="goat-sidebar-num">{c.number}</span>
+            <span className="goat-sidebar-name">{c.title}</span>
+            <span className="goat-sidebar-count">{c.articles.length}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   if (inCollection) {
     return (
       <aside className="sidebar">
+        <GoatSection />
         <div className="side-section" style={{ padding: '24px 18px' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--brand)', letterSpacing: '.06em', marginBottom: 10 }}>
             ★ COLLECTION
@@ -61,6 +84,8 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
 
   return (
     <aside className="sidebar">
+      <GoatSection />
+
       <div className="side-section">
         <div className="side-label">섹터 <span className="count">SECTOR</span></div>
         <div className="sector-list">
