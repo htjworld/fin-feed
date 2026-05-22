@@ -54,7 +54,7 @@ export const GOAT_COLLECTIONS: GoatCollection[] = [
     id: 'goat-ai-era',
     number: '01',
     title: 'AI 시대, 개발자의 생존전략',
-    desc: 'AI가 개발자를 대체할까, 아니면 공존할까? 토스·카카오·GitHub의 시각으로 읽는 소프트웨어 3.0 시대 생존 로드맵.',
+    desc: 'AI가 개발자를 대체할까, 아니면 공존할까?\n토스·카카오·GitHub의 시각으로 읽는 소프트웨어 3.0 시대 생존 로드맵.',
     accent: 'oklch(0.42 0.14 280)',
     articles: [
       { company: '토스', title: '개발자는 AI에게 대체될 것인가', date: '2026.01.21', url: 'https://toss.tech/article/will-ai-replace-developers' },
@@ -70,7 +70,7 @@ export const GOAT_COLLECTIONS: GoatCollection[] = [
     id: 'goat-backend',
     number: '02',
     title: '백엔드 개발자의 방향성',
-    desc: '학생부터 시니어까지 — 네이버·쿠팡·카카오·Dropbox가 말하는 백엔드 개발자로 성장하는 법.',
+    desc: '학생부터 시니어까지 —\n네이버·쿠팡·카카오·Dropbox가 말하는 백엔드 개발자로 성장하는 법.',
     accent: 'oklch(0.42 0.10 165)',
     articles: [
       { company: '네이버', title: '백엔드 개발자를 꿈꾸는 학생개발자에게', date: '2018.06.21', url: 'https://d2.naver.com/news/3435170' },
@@ -84,7 +84,7 @@ export const GOAT_COLLECTIONS: GoatCollection[] = [
     id: 'goat-traffic',
     number: '03',
     title: '대규모 트래픽 간접경험',
-    desc: '초당 수십만 요청, 캐시 설계, Elasticsearch 분산. 직접 겪지 않아도 배울 수 있는 대용량 트래픽 실전 케이스.',
+    desc: '초당 수십만 요청, 캐시 설계, Elasticsearch 분산.\n직접 겪지 않아도 배울 수 있는 대용량 트래픽 실전 케이스.',
     accent: 'oklch(0.52 0.14 60)',
     articles: [
       { company: '네이버', title: '확장성 있는 웹 아키텍처와 분산 시스템', date: '2012.11.20', url: 'https://d2.naver.com/helloworld/206816' },
@@ -100,7 +100,7 @@ export const GOAT_COLLECTIONS: GoatCollection[] = [
     id: 'goat-growth',
     number: '04',
     title: '어떤 개발자가 될 것인가',
-    desc: '신입부터 주니어까지 — 오픈소스, 디버깅, 이력서, 성장 마인드셋. 개발자로서 어떤 방향을 잡을 것인가.',
+    desc: '신입부터 주니어까지 — 오픈소스, 디버깅, 이력서, 성장 마인드셋.\n개발자로서 어떤 방향을 잡을 것인가.',
     accent: 'oklch(0.48 0.10 195)',
     articles: [
       { company: '네이버페이', title: '신입개발자의 역량과 성장에 대해서(feat. Done is better than perfect)', date: '2025.08.07', url: 'https://medium.com/naverfinancial/%EC%8B%A0%EC%9E%85%EA%B0%9C%EB%B0%9C%EC%9E%90%EC%9D%98-%EC%97%AD%EB%9F%89%EA%B3%BC-%EC%84%B1%EC%9E%A5%EC%97%90-%EB%8C%80%ED%95%B4%EC%84%9C-feat-done-is-better-than-perfect-0e7f3732555f' },
@@ -116,7 +116,7 @@ export const GOAT_COLLECTIONS: GoatCollection[] = [
     id: 'goat-legacy',
     number: '05',
     title: '레거시 뿌수기',
-    desc: '20년 레거시, 테스트 없는 코드, COBOL 메인프레임. 안정적으로 레거시를 뿌수는 실전 전략.',
+    desc: '20년 레거시, 테스트 없는 코드, COBOL 메인프레임.\n안정적으로 레거시를 뿌수는 실전 전략.',
     accent: 'oklch(0.45 0.12 25)',
     articles: [
       { company: '삼성', title: '레거시 코드를 어떻게든 테스트하기', date: '2025.06.10', url: 'https://techblog.samsung.com/blog/article/64', thumb_url: '/goat-thumbs/05-01.png' },
