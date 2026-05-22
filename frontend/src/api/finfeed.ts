@@ -124,28 +124,3 @@ export async function fetchCompanies(): Promise<Company[]> {
   return data.map(toCompany);
 }
 
-export interface DbCollection {
-  id: number;
-  name: string;
-  description: string;
-  articleCount: number;
-}
-
-export interface DbCollectionDetail {
-  id: number;
-  name: string;
-  description: string;
-  articles: ApiArticle[];
-}
-
-export async function fetchCollections(): Promise<DbCollection[]> {
-  const res = await fetch(`${BASE}/api/collections`, { next: { revalidate: 3600 } });
-  if (!res.ok) throw new Error(`collections API ${res.status}`);
-  return res.json();
-}
-
-export async function fetchCollectionDetail(id: number): Promise<DbCollectionDetail> {
-  const res = await fetch(`${BASE}/api/collections/${id}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`collection ${id} API ${res.status}`);
-  return res.json();
-}
