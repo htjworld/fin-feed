@@ -3,6 +3,24 @@ export type GoatArticle = {
   url: string;
   company: string;
   date: string;
+  thumb_url?: string;
+};
+
+export const GOAT_THUMB_BG: Record<string, [string, string]> = {
+  '토스':        ['#0046B4', '#0064FF'],
+  '카카오':      ['#8B7000', '#B89200'],
+  '카카오페이':  ['#8B6900', '#A87F00'],
+  '네이버':      ['#026A30', '#03C75A'],
+  '네이버페이':  ['#026A30', '#03C75A'],
+  '쿠팡':        ['#8B1000', '#C82B00'],
+  'Github':      ['#1C1C1C', '#383838'],
+  '삼쩜삼':      ['#2E307F', '#5B67F6'],
+  '삼성':        ['#0A1870', '#1428A0'],
+  '우아한형제들':['#156A6A', '#2AC1BC'],
+  '데브시스터즈':['#8B2020', '#FF4040'],
+  '컬리':        ['#3A0050', '#5F0080'],
+  '무신사':      ['#111111', '#2A2A2A'],
+  'Dropbox':     ['#003B9B', '#0061FF'],
 };
 
 export type GoatCollection = {
@@ -42,10 +60,10 @@ export const GOAT_COLLECTIONS: GoatCollection[] = [
       { company: '토스', title: '개발자는 AI에게 대체될 것인가', date: '2026.01.21', url: 'https://toss.tech/article/will-ai-replace-developers' },
       { company: '토스', title: '소프트웨어 3.0 시대를 맞이하며', date: '2026.01.26', url: 'https://toss.tech/article/software-3-0-era' },
       { company: 'Github', title: '개발자의 새로운 정체성: AI 시대에 달라지는 것과 변함없는 것', date: '2025.12.08', url: 'https://github.blog/news-insights/octoverse/the-new-identity-of-a-developer-what-changes-and-what-doesnt-in-the-ai-era/' },
-      { company: '카카오', title: 'AI 시대를 살아갈 개발자들에게', date: '2025.09.05', url: 'https://tech.kakao.com/posts/735' },
-      { company: '카카오페이', title: '해커톤 경험을 통해 엿본 AI시대에 개발자가 가져야 할 자세', date: '2025.06.19', url: 'https://tech.kakaopay.com/post/kakaopay-hackathon-aiva/' },
+      { company: '카카오', title: 'AI 시대를 살아갈 개발자들에게', date: '2025.09.05', url: 'https://tech.kakao.com/posts/735', thumb_url: '/goat-thumbs/01-04.jpg' },
+      { company: '카카오페이', title: '해커톤 경험을 통해 엿본 AI시대에 개발자가 가져야 할 자세', date: '2025.06.19', url: 'https://tech.kakaopay.com/post/kakaopay-hackathon-aiva/', thumb_url: '/goat-thumbs/01-05.webp' },
       { company: 'Github', title: '제어 없이는 속도가 무의미하다: AI 시대에 품질을 높게 유지하는 방법', date: '2025.12.09', url: 'https://github.blog/ai-and-ml/generative-ai/speed-is-nothing-without-control-how-to-keep-quality-high-in-the-ai-era/' },
-      { company: '카카오', title: 'if(kakao)25 Krew Day AI Talk Lounge: AI 시대의 기회와 고민을 논하며', date: '2025.11.04', url: 'https://tech.kakao.com/posts/785' },
+      { company: '카카오', title: 'if(kakao)25 Krew Day AI Talk Lounge: AI 시대의 기회와 고민을 논하며', date: '2025.11.04', url: 'https://tech.kakao.com/posts/785', thumb_url: '/goat-thumbs/01-07.jpg' },
     ],
   },
   {
@@ -57,8 +75,8 @@ export const GOAT_COLLECTIONS: GoatCollection[] = [
     articles: [
       { company: '네이버', title: '백엔드 개발자를 꿈꾸는 학생개발자에게', date: '2018.06.21', url: 'https://d2.naver.com/news/3435170' },
       { company: '쿠팡', title: '대용량 트래픽 처리를 위한 쿠팡의 백엔드 전략', date: '2022.09.02', url: 'https://medium.com/coupang-engineering/%EB%8C%80%EC%9A%A9%EB%9F%89-%ED%8A%B8%EB%9E%98%ED%94%BD-%EC%B2%98%EB%A6%AC%EB%A5%BC-%EC%9C%84%ED%95%9C-%EC%BF%A0%ED%8C%A1%EC%9D%98-%EB%B0%B1%EC%97%94%EB%93%9C-%EC%A0%84%EB%9E%B5-184f7fdb1367' },
-      { company: '카카오', title: '뉴크루의 카카오 백엔드 개발자 이야기', date: '2021.05.24', url: 'https://tech.kakao.com/posts/440' },
-      { company: '카카오페이', title: '백엔드 개발자의 시선으로 풀어본 LLM 내부 동작 원리: 6단계로 쉽게 이해하기', date: '2025.09.11', url: 'https://tech.kakaopay.com/post/how-llm-works/' },
+      { company: '카카오', title: '뉴크루의 카카오 백엔드 개발자 이야기', date: '2021.05.24', url: 'https://tech.kakao.com/posts/440', thumb_url: '/goat-thumbs/02-03.jpg' },
+      { company: '카카오페이', title: '백엔드 개발자의 시선으로 풀어본 LLM 내부 동작 원리: 6단계로 쉽게 이해하기', date: '2025.09.11', url: 'https://tech.kakaopay.com/post/how-llm-works/', thumb_url: '/goat-thumbs/02-04.webp' },
       { company: 'Dropbox', title: '실시간 백엔드 서버 부하 정보 활용을 통한 Dropbox의 Bandaid 로드 밸런싱 개선', date: '2019.09.18', url: 'https://dropbox.tech/infrastructure/enhancing-bandaid-load-balancing-at-dropbox-by-leveraging-real-time-backend-server-load-information' },
     ],
   },
@@ -87,8 +105,8 @@ export const GOAT_COLLECTIONS: GoatCollection[] = [
     articles: [
       { company: '네이버페이', title: '신입개발자의 역량과 성장에 대해서(feat. Done is better than perfect)', date: '2025.08.07', url: 'https://medium.com/naverfinancial/%EC%8B%A0%EC%9E%85%EA%B0%9C%EB%B0%9C%EC%9E%90%EC%9D%98-%EC%97%AD%EB%9F%89%EA%B3%BC-%EC%84%B1%EC%9E%A5%EC%97%90-%EB%8C%80%ED%95%B4%EC%84%9C-feat-done-is-better-than-perfect-0e7f3732555f' },
       { company: '데브시스터즈', title: '주니어 클라이언트 개발자의 성장 노트', date: '2025.07.25', url: 'https://tech.devsisters.com/posts/junior-client-note/' },
-      { company: '카카오페이', title: '주니어 개발자의 오픈소스 활동 이야기', date: '2022.11.04', url: 'https://tech.kakaopay.com/post/junior-opensource/' },
-      { company: '카카오', title: 'FE개발자의 성장 스토리 10 : 주니어 FE 개발자 오픈소스 성장기', date: '2021.06.16', url: 'https://tech.kakao.com/posts/444' },
+      { company: '카카오페이', title: '주니어 개발자의 오픈소스 활동 이야기', date: '2022.11.04', url: 'https://tech.kakaopay.com/post/junior-opensource/', thumb_url: '/goat-thumbs/04-03.webp' },
+      { company: '카카오', title: 'FE개발자의 성장 스토리 10 : 주니어 FE 개발자 오픈소스 성장기', date: '2021.06.16', url: 'https://tech.kakao.com/posts/444', thumb_url: '/goat-thumbs/04-04.png' },
       { company: '컬리', title: '딜리버리 프로덕트 개발팀의 개발 문화 - 주니어 디버깅 스터디', date: '2025.04.14', url: 'https://helloworld.kurly.com/blog/2025-delivery-debug-study/' },
       { company: '무신사', title: '도장 파는 개발자 vs 공장 짓는 개발자', date: '2025.11.17', url: 'https://techblog.musinsa.com/%EB%8F%84%EC%9E%A5-%ED%8C%8C%EB%8A%94-%EA%B0%9C%EB%B0%9C%EC%9E%90-vs-%EA%B3%B5%EC%9E%A5-%EC%A7%93%EB%8A%94-%EA%B0%9C%EB%B0%9C%EC%9E%90-b33dddf5daef' },
       { company: '우아한형제들', title: '왕초보 신입 개발자의 우당탕탕 이력서 작성기', date: '2023.05.24', url: 'https://techblog.woowahan.com/11998/' },

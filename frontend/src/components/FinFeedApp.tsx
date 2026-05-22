@@ -2,7 +2,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { COLLECTIONS, SECTORS, CATEGORIES } from '@/data';
-import { GOAT_COLLECTIONS } from '@/data/goat-collections';
 import type { Filters, Collection, Article, Sector, Company } from '@/types';
 import { AppProvider } from '@/context/AppContext';
 import { fetchArticles, fetchCompanies, fetchArticleCount } from '@/api/finfeed';
@@ -13,7 +12,6 @@ import ActiveFilters from './ActiveFilters';
 import CollectionCard from './CollectionCard';
 import CollectionsSection from './CollectionsSection';
 import GoatLoadingScreen from './GoatLoadingScreen';
-import GoatCollectionView from './GoatCollectionView';
 import Thumbnail from './Thumbnail';
 import { Ic } from './Icons';
 
@@ -31,7 +29,6 @@ export default function FinFeedApp() {
   const view     = (searchParams.get('view')   ?? 'card') as ViewMode;
 
   const [collection, setCollection] = useState<string | null>(null);
-  const [activeGoatId, setActiveGoatId] = useState<string | null>(null);
 
   // Loading screen state
   const [showLoadingScreen, setShowLoadingScreen] = useState(true);
@@ -173,10 +170,6 @@ export default function FinFeedApp() {
     ? COLLECTIONS.find((c) => c.id === collection) ?? null
     : null;
 
-  const activeGoatColl = activeGoatId
-    ? GOAT_COLLECTIONS.find((c) => c.id === activeGoatId) ?? null
-    : null;
-
   const displayed = useMemo(() => {
     let arr = [...articles];
 
@@ -211,7 +204,6 @@ export default function FinFeedApp() {
 
   const openCollection = (coll: Collection) => {
     setCollection(coll.id);
-    setActiveGoatId(null);
     router.replace('/', { scroll: false });
     document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -228,18 +220,7 @@ export default function FinFeedApp() {
 
   const onReset = () => {
     setCollection(null);
-    setActiveGoatId(null);
     router.replace('/', { scroll: false });
-  };
-
-  const handleGoatSelect = (id: string) => {
-    setActiveGoatId(id);
-    setCollection(null);
-    document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleGoatClose = () => {
-    setActiveGoatId(null);
   };
 
   const featured = articles[0];
@@ -250,15 +231,7 @@ export default function FinFeedApp() {
   let eyebrowNode: React.ReactNode;
   let titleNode: React.ReactNode;
 
-  if (activeGoatColl) {
-    eyebrowNode = (
-      <div className="crumb">
-        <span>GOAT</span><span className="sep">/</span>
-        <span className="active">{activeGoatColl.title}</span>
-      </div>
-    );
-    titleNode = null;
-  } else if (activeCollection) {
+  if (activeCollection) {
     eyebrowNode = (
       <div className="crumb">
         <span>COLLECTIONS</span><span className="sep">/</span>
@@ -307,8 +280,6 @@ export default function FinFeedApp() {
           setFilters={setFilters}
           sectors={sectorsWithCounts}
           inCollection={collection !== null}
-          activeGoatId={activeGoatId}
-          onGoatSelect={handleGoatSelect}
         />
         <main className="main">
           <div className="main-inner">
@@ -316,42 +287,34 @@ export default function FinFeedApp() {
               <div className="title-block">
                 {eyebrowNode}
                 {titleNode && <div className="title-row">{titleNode}</div>}
-                {!activeGoatColl && (
-                  <div className="page-meta" style={{ marginTop: 6 }}>
-                    <span>{displayed.length.toLocaleString()} 아티클</span>
-                    <span className="sep">·</span>
-                    <span>{[...new Set(displayed.map((a) => a.company))].length}개 회사</span>
-                    <span className="sep">·</span>
-                    {activeCollection ? (
-                      <span style={{ color: 'var(--accent)' }}>★ 큐레이션 컬렉션</span>
-                    ) : (
-                      <span style={{ color: 'var(--brand-3)' }}>● 자동 수집</span>
-                    )}
-                  </div>
-                )}
-              </div>
-              {!activeGoatColl && (
-                <div className="toolbar">
-                  <div className="tbtn-group">
-                    <button className={`tbtn ${view === 'gallery' ? 'active' : ''}`} onClick={() => setView('gallery')}><Ic.gallery /></button>
-                    <button className={`tbtn ${view === 'card' ? 'active' : ''}`} onClick={() => setView('card')}><Ic.grid /></button>
-                    <button className={`tbtn ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}><Ic.list /></button>
-                  </div>
+                <div className="page-meta" style={{ marginTop: 6 }}>
+                  <span>{displayed.length.toLocaleString()} 아티클</span>
+                  <span className="sep">·</span>
+                  <span>{[...new Set(displayed.map((a) => a.company))].length}개 회사</span>
+                  <span className="sep">·</span>
+                  {activeCollection ? (
+                    <span style={{ color: 'var(--accent)' }}>★ 큐레이션 컬렉션</span>
+                  ) : (
+                    <span style={{ color: 'var(--brand-3)' }}>● 자동 수집</span>
+                  )}
                 </div>
-              )}
+              </div>
+              <div className="toolbar">
+                <div className="tbtn-group">
+                  <button className={`tbtn ${view === 'gallery' ? 'active' : ''}`} onClick={() => setView('gallery')}><Ic.gallery /></button>
+                  <button className={`tbtn ${view === 'card' ? 'active' : ''}`} onClick={() => setView('card')}><Ic.grid /></button>
+                  <button className={`tbtn ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}><Ic.list /></button>
+                </div>
+              </div>
             </div>
 
-            {/* Goat Collection Detail View */}
-            {activeGoatColl ? (
-              <GoatCollectionView collection={activeGoatColl} onClose={handleGoatClose} />
-            ) : (
-              <>
-                {/* Loading Screen (server sleeping) */}
-                {showLoadingScreen ? (
-                  <div className={`goat-loading-wrap ${loadingFading ? 'goat-fade-out' : ''}`}>
-                    <GoatLoadingScreen onSelectCollection={handleGoatSelect} />
-                  </div>
-                ) : (
+            <>
+              {/* Loading Screen (server sleeping) */}
+              {showLoadingScreen ? (
+                <div className={`goat-loading-wrap ${loadingFading ? 'goat-fade-out' : ''}`}>
+                  <GoatLoadingScreen />
+                </div>
+              ) : (
                   <div className="content-fade-in">
                     <ActiveFilters filters={filters} setFilters={setFilters} query={query} setQuery={setQuery} />
 
@@ -534,7 +497,6 @@ export default function FinFeedApp() {
                   </div>
                 )}
               </>
-            )}
           </div>
         </main>
       </div>

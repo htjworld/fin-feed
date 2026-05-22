@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { GOAT_COLLECTIONS, type GoatCollection } from '@/data/goat-collections';
 
 const LOADING_MESSAGES = [
@@ -14,11 +15,8 @@ const LOADING_MESSAGES = [
   '알고리즘이 최적의 글을 선별하는 중...',
 ];
 
-type Props = {
-  onSelectCollection: (id: string) => void;
-};
-
-export default function GoatLoadingScreen({ onSelectCollection }: Props) {
+export default function GoatLoadingScreen() {
+  const router = useRouter();
   const [msgIdx, setMsgIdx] = useState(0);
   const [visible, setVisible] = useState(false);
 
@@ -33,6 +31,10 @@ export default function GoatLoadingScreen({ onSelectCollection }: Props) {
     }, 2800);
     return () => clearInterval(t);
   }, []);
+
+  const handleClick = (c: GoatCollection) => {
+    router.push(`/collections/${parseInt(c.number)}`);
+  };
 
   return (
     <div className={`goat-loading ${visible ? 'visible' : ''}`}>
@@ -52,7 +54,7 @@ export default function GoatLoadingScreen({ onSelectCollection }: Props) {
             key={c.id}
             className="goat-card"
             style={{ '--goat-accent': c.accent } as React.CSSProperties}
-            onClick={() => onSelectCollection(c.id)}
+            onClick={() => handleClick(c)}
           >
             <div className="goat-card-bg" />
             <div className="goat-card-num">★ COLLECTION · {c.number}</div>
