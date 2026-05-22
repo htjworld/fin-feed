@@ -26,7 +26,11 @@ async function getOgImage(url: string): Promise<string | null> {
     const html = await res.text();
     const ogTag = html.match(/<meta[^>]+og:image[^>]+>/i)?.[0] ?? '';
     const content = ogTag.match(/content=["']([^"']+)["']/)?.[1] ?? null;
-    return content;
+    if (!content) return null;
+    // 상대경로를 절대 URL로 변환
+    if (content.startsWith('http')) return content;
+    const base = new URL(url);
+    return new URL(content, base.origin).toString();
   } catch {
     return null;
   }

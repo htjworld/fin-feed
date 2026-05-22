@@ -109,7 +109,7 @@ export const GOAT_COLLECTIONS: GoatCollection[] = [
       { company: '카카오', title: 'FE개발자의 성장 스토리 10 : 주니어 FE 개발자 오픈소스 성장기', date: '2021.06.16', url: 'https://tech.kakao.com/posts/444', thumb_url: '/goat-thumbs/04-04.png' },
       { company: '컬리', title: '딜리버리 프로덕트 개발팀의 개발 문화 - 주니어 디버깅 스터디', date: '2025.04.14', url: 'https://helloworld.kurly.com/blog/2025-delivery-debug-study/' },
       { company: '무신사', title: '도장 파는 개발자 vs 공장 짓는 개발자', date: '2025.11.17', url: 'https://techblog.musinsa.com/%EB%8F%84%EC%9E%A5-%ED%8C%8C%EB%8A%94-%EA%B0%9C%EB%B0%9C%EC%9E%90-vs-%EA%B3%B5%EC%9E%A5-%EC%A7%93%EB%8A%94-%EA%B0%9C%EB%B0%9C%EC%9E%90-b33dddf5daef' },
-      { company: '우아한형제들', title: '왕초보 신입 개발자의 우당탕탕 이력서 작성기', date: '2023.05.24', url: 'https://techblog.woowahan.com/11998/' },
+      { company: '우아한형제들', title: '왕초보 신입 개발자의 우당탕탕 이력서 작성기', date: '2023.05.24', url: 'https://techblog.woowahan.com/11998/', thumb_url: 'https://techblog.woowahan.com/wp-content/uploads/2023/05/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA-2023-05-17-%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB-10.30.10-1024x537.png' },
     ],
   },
   {
