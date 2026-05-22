@@ -3,19 +3,31 @@
 > 금융 IT 개발자를 위한 기술 블로그 허브.  
 > 은행 · 증권 · 가상자산 · 핀테크까지, 국내외 금융 IT 블로그를 한 곳에서.
 
+**🌐 [finfeeds.vercel.app](https://finfeeds.vercel.app)**
+
 ---
 
 ## 구현 상태
 
 | 영역 | 상태 | 비고 |
 |------|------|------|
-| **프론트엔드** (Next.js) | ✅ 완료 | 실 API 연동, 커서 페이지네이션 |
+| **프론트엔드** (Next.js) | ✅ 완료 | 실 API 연동, 커서 페이지네이션, 모바일 반응형 |
 | **백엔드** (Spring Boot) | ✅ 완료 | REST API + FTS + 썸네일/태그 backfill |
 | **DB 스키마** (Supabase) | ✅ 완료 | PostgreSQL FTS, migration 004까지 적용 |
 | **크롤러** (GitHub Actions) | ✅ 운영 중 | RSS + Medium Apollo + CSS Selector, 6h 주기 |
-| **배포** (Vercel + Render) | 🔲 미착수 | — |
+| **배포** (Vercel + Render) | ✅ 운영 중 | finfeeds.vercel.app |
 
 **현재 데이터**: 27개 회사 · ~420건 아티클 (2026-05 기준)
+
+---
+
+## 주요 기능
+
+- **아티클 피드** — 섹터 · 회사 · 카테고리 · 기간 필터, 키워드 검색(FTS), 카드/갤러리/리스트 뷰
+- **GOAT 컬렉션** — 주제별 엄선 아티클 5종 (`/collections/1~5`), 전용 페이지 + 썸네일 카드
+- **모바일 반응형** — 햄버거 메뉴로 필터 사이드바 드롭다운, 필터 선택 시 자동 닫힘
+- **로딩 화면** — 서버 콜드 스타트 대기 중 GOAT 컬렉션 미리보기 노출
+- **자동 수집** — 6시간마다 RSS/Medium/CSS Selector 크롤링, OG 썸네일 backfill
 
 ---
 
@@ -28,7 +40,7 @@
 | 언어 | TypeScript |
 | 스타일 | Custom CSS (디자인 시스템 변수 기반) |
 | 폰트 | Geist · Geist Mono · Newsreader |
-| 배포 | Vercel (예정) |
+| 배포 | Vercel |
 
 ### 백엔드
 | 항목 | 선택 |
@@ -37,7 +49,7 @@
 | DB | Supabase PostgreSQL |
 | 검색 | PostgreSQL Full-Text Search |
 | RSS 파싱 | Rome 2.1 + Jsoup 1.17 |
-| 배포 | Render (예정) |
+| 배포 | Render |
 
 ### 크롤러 (별도 모듈)
 | 크롤러 타입 | 대상 | 방식 |
@@ -55,28 +67,32 @@ fin-feed/
 ├── frontend/                   # Next.js 15 앱
 │   └── src/
 │       ├── app/
+│       │   ├── collections/[id]/   # GOAT 컬렉션 전용 페이지
+│       │   └── page.tsx
 │       ├── components/
+│       │   ├── GoatCard.tsx        # GOAT 컬렉션 아티클 카드
+│       │   ├── GoatLoadingScreen.tsx
+│       │   └── ...
 │       ├── api/                # finfeed.ts — 실 API 클라이언트
-│       ├── data/               # COLLECTIONS, CATEGORIES 등 정적 데이터
+│       ├── data/
+│       │   ├── goat-collections.ts # GOAT 컬렉션 큐레이션 데이터
+│       │   └── index.ts
 │       └── types/
 ├── backend/                    # Spring Boot 앱 (API 서버)
-│   ├── src/main/java/com/finfeed/
-│   │   ├── article/            # 아티클 API + 커서 페이지네이션
-│   │   ├── company/            # 회사 API
-│   │   ├── crawl/              # RSS 크롤러 + backfill 엔드포인트
-│   │   ├── common/             # Sector, Converter
-│   │   └── web/                # CORS, 헬스체크, 예외처리
+│   └── src/main/java/com/finfeed/
+│       ├── article/            # 아티클 API + 커서 페이지네이션
+│       ├── company/            # 회사 API
+│       ├── crawl/              # RSS 크롤러 + backfill 엔드포인트
+│       ├── common/             # Sector, Converter
+│       └── web/                # CORS, 헬스체크, 예외처리
+├── crawler/                    # GitHub Actions 크롤러 (별도 Spring Boot 앱)
+│   ├── src/main/java/com/finfeed/crawler/
+│   │   ├── service/            # RssCrawler, MediumBlogCrawler, SelectorBlogCrawler
+│   │   ├── domain/             # Company, Article, CrawlLog 엔티티
+│   │   └── config/             # WebDriverConfig (Selenium)
 │   └── src/main/resources/db/
 │       ├── schema.sql          # DB 스키마
-│       ├── data.sql            # 초기 회사 데이터 27개
-│       ├── migration_001_update_companies.sql
-│       ├── migration_003_add_crawl_type.sql
-│       └── migration_004_add_verified_sources.sql
-├── crawler/                    # GitHub Actions 크롤러 (별도 Spring Boot 앱)
-│   └── src/main/java/com/finfeed/crawler/
-│       ├── service/            # RssCrawler, MediumBlogCrawler, SelectorBlogCrawler
-│       ├── domain/             # Company, Article, CrawlLog 엔티티
-│       └── config/             # WebDriverConfig (Selenium)
+│       └── data.sql            # 초기 회사 데이터 27개
 ├── .github/workflows/
 │   └── crawl.yml               # 6시간 cron + workflow_dispatch
 └── README.md
@@ -106,8 +122,8 @@ CRAWLER_API_KEY=your-secret-crawler-key
 Supabase SQL Editor에서 순서대로 실행:
 
 ```
-backend/src/main/resources/db/schema.sql   ← 테이블 생성
-backend/src/main/resources/db/data.sql     ← 회사 27개 초기 데이터
+crawler/src/main/resources/db/schema.sql   ← 테이블 생성
+crawler/src/main/resources/db/data.sql     ← 회사 27개 초기 데이터
 ```
 
 > 크롤러(GitHub Actions)는 시작 시 schema/data를 자동으로 적용하므로, 빈 DB에 크롤러만 돌려도 됨.
