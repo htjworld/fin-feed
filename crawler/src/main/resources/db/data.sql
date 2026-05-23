@@ -1,6 +1,8 @@
 -- FinFeed 초기 회사 데이터 (RSS 크롤 가능한 소스만 포함)
 -- crawl_type: RSS | MEDIUM_APOLLO | CSS_SELECTOR | NONE
 -- is_active: false = 블로그 비활성 또는 RSS 없음
+--
+-- [방침] 국내(한국) 회사만 추가한다. 해외 회사는 추가하지 않는다.
 
 INSERT INTO companies (name, name_en, rss_url, site_url, sector, crawl_type, is_active, logo_url) VALUES
 
