@@ -27,20 +27,31 @@ public class TossBackfillService {
     private static final int MAX_PAGES = 30;
     private static final int TIMEOUT_MS = 15_000;
 
+    private static final String BACKFILL_KEY = "toss";
+
     private final ArticleRepository articleRepository;
     private final CompanyRepository companyRepository;
     private final CrawlLogRepository crawlLogRepository;
+    private final BackfillLogRepository backfillLogRepository;
 
     public TossBackfillService(ArticleRepository articleRepository,
                                CompanyRepository companyRepository,
-                               CrawlLogRepository crawlLogRepository) {
+                               CrawlLogRepository crawlLogRepository,
+                               BackfillLogRepository backfillLogRepository) {
         this.articleRepository = articleRepository;
         this.companyRepository = companyRepository;
         this.crawlLogRepository = crawlLogRepository;
+        this.backfillLogRepository = backfillLogRepository;
     }
 
     @Transactional
     public int backfill() {
+        // 이미 완료된 백필이면 스킵
+        if (backfillLogRepository.existsById(BACKFILL_KEY)) {
+            log.info("[Toss backfill] 이미 완료됨 (backfill_log 확인), 스킵. 재실행하려면 DELETE FROM backfill_log WHERE name = 'toss'");
+            return 0;
+        }
+
         Company toss = companyRepository.findByNameEn("Toss").orElse(null);
         if (toss == null) {
             log.warn("Toss company not found");
@@ -64,6 +75,8 @@ public class TossBackfillService {
             log.info("[Toss backfill] 완료: {}개 신규 저장", added);
             crawlLog.succeed(added);
             crawlLogRepository.save(crawlLog);
+            // 완료 기록 — 다음 호출 시 중복 실행 방지
+            backfillLogRepository.save(new BackfillLog(BACKFILL_KEY, LocalDateTime.now(), added));
             return added;
         } catch (Exception e) {
             log.error("[Toss backfill] 실패: {}", e.getMessage());

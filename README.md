@@ -3,21 +3,7 @@
 > 금융 IT 개발자를 위한 기술 블로그 허브.  
 > 은행 · 증권 · 가상자산 · 핀테크까지, 국내외 금융 IT 블로그를 한 곳에서.
 
-**🌐 [finfeeds.vercel.app](https://finfeeds.vercel.app)**
-
----
-
-## 구현 상태
-
-| 영역 | 상태 | 비고 |
-|------|------|------|
-| **프론트엔드** (Next.js) | ✅ 완료 | 실 API 연동, 커서 페이지네이션, 모바일 반응형, Safari 파비콘 |
-| **백엔드** (Spring Boot) | ✅ 완료 | REST API + FTS + 썸네일/태그 backfill + 회사 필터 서버사이드 |
-| **DB 스키마** (Supabase) | ✅ 완료 | PostgreSQL FTS, migration 004까지 적용 |
-| **크롤러** (GitHub Actions) | ✅ 운영 중 | RSS + Medium Apollo + CSS Selector, 6h 주기 |
-| **배포** (Vercel + Render) | ✅ 운영 중 | finfeeds.vercel.app |
-
-**현재 데이터**: 20개 회사 · ~460건 아티클 (2026-05 기준)
+**🌐 [finfeeds.vercel.app](https://finfeeds.vercel.app)** &nbsp;·&nbsp; 20개 회사 · ~460건 아티클 (2026-05 기준)
 
 ---
 
@@ -33,30 +19,17 @@
 
 ## 기술 스택
 
-### 프론트엔드
-| 항목 | 선택 |
-|------|------|
-| 프레임워크 | Next.js 15 (App Router) |
-| 언어 | TypeScript |
-| 스타일 | Custom CSS (디자인 시스템 변수 기반) |
-| 폰트 | Geist · Geist Mono · Newsreader |
-| 배포 | Vercel |
+**Frontend** — Next.js 15 (App Router) · Custom CSS · Geist/Newsreader 폰트
 
-### 백엔드
-| 항목 | 선택 |
-|------|------|
-| 프레임워크 | Spring Boot 3.3 (Java 21) |
-| DB | Supabase PostgreSQL |
-| 검색 | PostgreSQL Full-Text Search |
-| RSS 파싱 | Rome 2.1 + Jsoup 1.17 |
-| 배포 | Render |
+[![Frontend](https://skillicons.dev/icons?i=nextjs,vercel)](https://skillicons.dev)
 
-### 크롤러 (별도 모듈)
-| 크롤러 타입 | 대상 | 방식 |
-|------------|------|------|
-| `RSS` | 토스, 카카오뱅크, 뱅크샐러드 등 | Rome RSS 파싱 |
-| `MEDIUM_APOLLO` | Medium 기반 블로그 | Selenium + Apollo State 추출 |
-| `CSS_SELECTOR` | 일반 HTML 블로그 | Jsoup + DB 관리 선택자 |
+**Backend** — Spring Boot 3.3 · PostgreSQL FTS · Rome 2.1 + Jsoup 파싱
+
+[![Backend](https://skillicons.dev/icons?i=spring,postgres,supabase)](https://skillicons.dev)
+
+**Crawler** — GitHub Actions 6h cron · RSS / Selenium Apollo / Jsoup Selector
+
+[![Crawler](https://skillicons.dev/icons?i=githubactions,selenium)](https://skillicons.dev)
 
 ---
 
@@ -70,19 +43,17 @@ fin-feed/
 │       │   ├── collections/[id]/   # GOAT 컬렉션 전용 페이지
 │       │   └── page.tsx
 │       ├── components/
-│       │   ├── GoatCard.tsx        # GOAT 컬렉션 아티클 카드
+│       │   ├── GoatCard.tsx
 │       │   ├── GoatLoadingScreen.tsx
 │       │   └── ...
 │       ├── api/                # finfeed.ts — 실 API 클라이언트
-│       ├── data/
-│       │   ├── goat-collections.ts # GOAT 컬렉션 큐레이션 데이터
-│       │   └── index.ts
-│       └── types/
+│       └── data/
+│           └── goat-collections.ts
 ├── backend/                    # Spring Boot 앱 (API 서버)
 │   └── src/main/java/com/finfeed/
 │       ├── article/            # 아티클 API + 커서 페이지네이션
 │       ├── company/            # 회사 API
-│       ├── crawl/              # RSS 크롤러 + backfill 엔드포인트
+│       ├── crawl/              # 크롤링 트리거 + backfill 엔드포인트
 │       ├── common/             # Sector, Converter
 │       └── web/                # CORS, 헬스체크, 예외처리
 ├── crawler/                    # GitHub Actions 크롤러 (별도 Spring Boot 앱)
@@ -92,7 +63,7 @@ fin-feed/
 │   │   └── config/             # WebDriverConfig (Selenium)
 │   └── src/main/resources/db/
 │       ├── schema.sql          # DB 스키마
-│       └── data.sql            # 초기 회사 데이터 27개
+│       └── data.sql            # 초기 회사 데이터
 ├── .github/workflows/
 │   └── crawl.yml               # 6시간 cron + workflow_dispatch
 └── README.md
@@ -123,10 +94,10 @@ Supabase SQL Editor에서 순서대로 실행:
 
 ```
 crawler/src/main/resources/db/schema.sql   ← 테이블 생성
-crawler/src/main/resources/db/data.sql     ← 회사 27개 초기 데이터
+crawler/src/main/resources/db/data.sql     ← 회사 초기 데이터
 ```
 
-> 크롤러(GitHub Actions)는 시작 시 schema/data를 자동으로 적용하므로, 빈 DB에 크롤러만 돌려도 됨.
+> 크롤러(GitHub Actions)는 시작 시 schema/data를 자동 적용하므로, 빈 DB에 크롤러만 돌려도 됨.
 
 ### 3. 빌드 및 실행
 
@@ -188,7 +159,7 @@ npm run dev   # http://localhost:3000
 | 💳 국내 핀테크 | 토스, 뱅크샐러드, 네이버페이, 카카오, 삼쩜삼 | RSS | ✅ |
 | 💳 국내 핀테크 | 핀다 | Medium RSS | ⚠️ 수집 0건 |
 | 💳 국내 핀테크 | 카카오페이 | NONE | RSS 공급 없음 |
-| 🪙 가상자산 | 클레이튼/Kaia | RSS | ✅ |
+| 🪙 가상자산 | Kaia | RSS | ✅ |
 | 🪙 가상자산 | Coinbase | RSS | ⚠️ 수집 0건 |
 | 🌐 해외 핀테크 | Stripe, Plaid, Nubank | RSS | ✅ |
 | 🌐 해외 핀테크 | Revolut, Wise, Monzo, Robinhood | Medium RSS | ✅ |
@@ -200,7 +171,7 @@ npm run dev   # http://localhost:3000
 ## 크롤러 수동 실행 (GitHub Actions)
 
 ```bash
-# CLI
+# 전체 실행
 gh workflow run crawl.yml --ref dev
 
 # 특정 회사만

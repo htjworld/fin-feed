@@ -1,5 +1,11 @@
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+
+// 모듈 레벨 싱글턴 — 페이지 이동에도 초기화되지 않음
+const _session = {
+  startTime: Date.now(),
+  dismissed: false,
+};
 import { useSearchParams, useRouter } from 'next/navigation';
 import { COLLECTIONS, SECTORS, CATEGORIES } from '@/data';
 import type { Filters, Collection, Article, Sector, Company } from '@/types';
@@ -33,8 +39,8 @@ export default function FinFeedApp() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { readIds, markRead } = useReadArticles();
 
-  // Loading screen state
-  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
+  // Loading screen state — 초기값을 싱글턴에서 읽어 네비게이션 후에도 dismissed 유지
+  const [showLoadingScreen, setShowLoadingScreen] = useState(!_session.dismissed);
   const [loadingFading, setLoadingFading] = useState(false);
 
   const updateParams = useCallback((updates: Record<string, string | null>) => {
@@ -142,6 +148,7 @@ export default function FinFeedApp() {
     if (!loading && showLoadingScreen) {
       setLoadingFading(true);
       const t = setTimeout(() => {
+        _session.dismissed = true;
         setShowLoadingScreen(false);
         setLoadingFading(false);
       }, 600);
@@ -323,7 +330,7 @@ export default function FinFeedApp() {
               {/* Loading Screen (server sleeping) */}
               {showLoadingScreen ? (
                 <div className={`goat-loading-wrap ${loadingFading ? 'goat-fade-out' : ''}`}>
-                  <GoatLoadingScreen isReady={!loading} />
+                  <GoatLoadingScreen isReady={!loading} startTime={_session.startTime} />
                 </div>
               ) : (
                   <div className="content-fade-in">

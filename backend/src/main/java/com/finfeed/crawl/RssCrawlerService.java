@@ -91,6 +91,10 @@ public class RssCrawlerService implements BlogCrawler {
         String url = resolveUrl(entry.getLink(), company.getSiteUrl());
         if (url == null || url.isBlank() || articleRepository.existsByUrl(url)) return false;
 
+        // 같은 회사에 동일 제목 아티클이 이미 있으면 스킵 (EN/KO 이중 게시 방지)
+        String title = sanitize(entry.getTitle());
+        if (!title.isBlank() && articleRepository.existsByCompanyIdAndTitle(company.getId(), title)) return false;
+
         String thumbnail = extractThumbnail(entry);
         if (thumbnail == null || thumbnail.isBlank()) {
             thumbnail = fetchThumbnailFromHtml(url);
@@ -102,7 +106,7 @@ public class RssCrawlerService implements BlogCrawler {
 
         Article article = Article.builder()
                 .company(company)
-                .title(sanitize(entry.getTitle()))
+                .title(title)
                 .url(url)
                 .summary(extractSummary(entry))
                 .thumbnailUrl(thumbnail)
@@ -153,7 +157,7 @@ public class RssCrawlerService implements BlogCrawler {
 
     private String sanitize(String text) {
         if (text == null) return "";
-        return text.replaceAll("<[^>]+>", "").trim();
+        return Jsoup.parse(text).text().trim();
     }
 
     private String extractSummary(SyndEntry entry) {

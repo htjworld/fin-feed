@@ -20,14 +20,14 @@ const LOADING_MESSAGES = [
 const MAX_PROGRESS = 98;
 const TIME_SCALE = 35;
 
-type Props = { isReady: boolean };
+type Props = { isReady: boolean; startTime: number };
 
-export default function GoatLoadingScreen({ isReady }: Props) {
+export default function GoatLoadingScreen({ isReady, startTime }: Props) {
   const router = useRouter();
   const [msgIdx, setMsgIdx] = useState(0);
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
-  const startRef = useRef(Date.now());
+  const startRef = useRef(startTime);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
