@@ -34,4 +34,6 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     List<Company> findByActiveTrue();
 
     List<Company> findBySectorAndActiveTrue(Sector sector);
+
+    java.util.Optional<Company> findByNameEn(String nameEn);
 }

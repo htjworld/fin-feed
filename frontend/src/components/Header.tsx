@@ -15,7 +15,14 @@ type Props = {
 export default function Header({ query, setQuery, onSelect, onReset, onFilterOpen, filterOpen }: Props) {
   const { companies, companyById } = useApp();
   const [focused, setFocused] = useState(false);
+  const [inputValue, setInputValue] = useState(query);
+  const composingRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync external query changes (e.g., filter cleared) into local input, but not during IME
+  useEffect(() => {
+    if (!composingRef.current) setInputValue(query);
+  }, [query]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -33,13 +40,13 @@ export default function Header({ query, setQuery, onSelect, onReset, onFilterOpe
   }, []);
 
   const suggestions = useMemo(() => {
-    if (!query) return { recent: ['고가용성', 'PostgreSQL FTS', 'Saga 패턴'] };
-    const q = query.toLowerCase();
+    if (!inputValue) return { recent: ['고가용성', 'PostgreSQL FTS', 'Saga 패턴'] };
+    const q = inputValue.toLowerCase();
     const comps = companies
       .filter((c) => c.name.toLowerCase().includes(q) || c.name_en.toLowerCase().includes(q))
       .slice(0, 4);
     return { comps };
-  }, [query, companies]);
+  }, [inputValue, companies]);
 
   return (
     <header className="header">
@@ -52,8 +59,16 @@ export default function Header({ query, setQuery, onSelect, onReset, onFilterOpe
           <span className="icon"><Ic.search /></span>
           <input
             ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              if (!composingRef.current) setQuery(e.target.value);
+            }}
+            onCompositionStart={() => { composingRef.current = true; }}
+            onCompositionEnd={(e) => {
+              composingRef.current = false;
+              setQuery(e.currentTarget.value);
+            }}
             onFocus={() => setFocused(true)}
             onBlur={() => setTimeout(() => setFocused(false), 150)}
             placeholder="회사·기술·키워드 검색 — 예) 카프카, Saga, 마이데이터"
@@ -61,7 +76,7 @@ export default function Header({ query, setQuery, onSelect, onReset, onFilterOpe
           <div className="kbd"><span>⌘</span><span>K</span></div>
           {focused && (
             <div className="cmd-hint">
-              {!query && (
+              {!inputValue && (
                 <div className="ch-section">
                   <div className="ch-label">검색 예시</div>
                   {(suggestions as { recent: string[] }).recent.map((r) => (
@@ -71,7 +86,7 @@ export default function Header({ query, setQuery, onSelect, onReset, onFilterOpe
                   ))}
                 </div>
               )}
-              {query && (
+              {inputValue && (
                 <>
                   {(suggestions as { comps?: typeof companies }).comps?.length ? (
                     <div className="ch-section">
@@ -86,7 +101,7 @@ export default function Header({ query, setQuery, onSelect, onReset, onFilterOpe
                     </div>
                   ) : (
                     <div className="ch-section" style={{ padding: '16px', color: 'var(--ink-4)', fontSize: 13 }}>
-                      &quot;{query}&quot; 검색 중…
+                      &quot;{inputValue}&quot; 검색 중…
                     </div>
                   )}
                 </>
@@ -101,8 +116,7 @@ export default function Header({ query, setQuery, onSelect, onReset, onFilterOpe
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>필터</span>
         </button>
         <button className="hbtn desktop-only">
-          <span className="live-dot" />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>LIVE · 6h sync</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>AUTO-SYNC · 6h</span>
         </button>
         <button className="hbtn desktop-only"><Ic.rss /></button>
         <button className="hbtn desktop-only"><Ic.bell /></button>
