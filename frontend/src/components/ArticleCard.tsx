@@ -11,6 +11,8 @@ type Props = {
   view?: 'grid' | 'list';
   query?: string;
   highlightTags?: string[];
+  isRead?: boolean;
+  onRead?: (id: number) => void;
 };
 
 function highlight(text: string, q: string) {
@@ -26,7 +28,7 @@ function highlight(text: string, q: string) {
   );
 }
 
-export default function ArticleCard({ article, view = 'grid', query = '', highlightTags = [] }: Props) {
+export default function ArticleCard({ article, view = 'grid', query = '', highlightTags = [], isRead = false, onRead }: Props) {
   const { companyById } = useApp();
   const company = companyById[article.company];
   const sector = company ? (SECTOR_BY_ID[company.sector] ?? SECTOR_BY_ID['domestic_fintech']) : SECTOR_BY_ID['domestic_fintech'];
@@ -35,7 +37,7 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
 
   return (
     <article
-      className={`card ${article.pinned ? 'pinned' : ''} ${view === 'list' ? 'list-row' : ''}`}
+      className={`card ${article.pinned ? 'pinned' : ''} ${view === 'list' ? 'list-row' : ''} ${isRead ? 'read' : ''}`}
       style={{ position: 'relative' }}
     >
       {article.url && (
@@ -45,6 +47,7 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
           rel="noopener noreferrer"
           aria-label={article.title}
           style={{ position: 'absolute', inset: 0, zIndex: 1 }}
+          onClick={() => onRead?.(article.id)}
         />
       )}
       <Thumbnail article={article} company={company} sector={sector} />
@@ -53,6 +56,7 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
         <p className="card-summary">{highlight(article.summary, query)}</p>
         <div className="card-foot">
           <div className="card-tags">
+            {isRead && <span className="tag read-badge">✓ 읽음</span>}
             {article.tags.map((t) => (
               <span key={t} className={`tag ${highlightTags.includes(t) ? 'hit' : ''}`}>
                 {CATEGORY_BY_ID[t]?.label || t}
@@ -66,7 +70,7 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
               rel="noopener noreferrer"
               className="card-read"
               style={{ position: 'relative', zIndex: 2 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); onRead?.(article.id); }}
             >
               <Ic.ext /> 원문
             </a>

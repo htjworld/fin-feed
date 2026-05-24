@@ -5,6 +5,7 @@ import { COLLECTIONS, SECTORS, CATEGORIES } from '@/data';
 import type { Filters, Collection, Article, Sector, Company } from '@/types';
 import { AppProvider } from '@/context/AppContext';
 import { fetchArticles, fetchCompanies, fetchArticleCount } from '@/api/finfeed';
+import { useReadArticles } from '@/hooks/useReadArticles';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import ArticleCard from './ArticleCard';
@@ -30,6 +31,7 @@ export default function FinFeedApp() {
 
   const [collection, setCollection] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { readIds, markRead } = useReadArticles();
 
   // Loading screen state
   const [showLoadingScreen, setShowLoadingScreen] = useState(true);
@@ -476,7 +478,7 @@ export default function FinFeedApp() {
                         )}
                         <div className={`grid ${view === 'list' ? 'list' : view === 'gallery' ? 'gallery' : ''}`}>
                           {displayed.map((a) => (
-                            <ArticleCard key={a.id} article={a} view={view === 'list' ? 'list' : 'grid'} query={isSearch ? query : ''} highlightTags={filters.categories} />
+                            <ArticleCard key={a.id} article={a} view={view === 'list' ? 'list' : 'grid'} query={isSearch ? query : ''} highlightTags={filters.categories} isRead={readIds.has(a.id)} onRead={markRead} />
                           ))}
                         </div>
                       </>
