@@ -1,28 +1,37 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { GOAT_COLLECTIONS, type GoatCollection } from '@/data/goat-collections';
 
 const LOADING_MESSAGES = [
-  '도서관에서 맞춤형 책 찾는 중...',
-  '세상의 모든 개발 인사이트를 수집하는 중...',
+  '서버가 긴 잠에서 깨어나는 중...',
   '빅테크 블로그에서 보물 캐는 중...',
   '핀테크 엔지니어들의 지혜를 깨우는 중...',
-  '서버가 긴 잠에서 깨어나는 중...',
-  '코드 리뷰 마치고 돌아오는 중...',
-  '스타트업 기술 블로그 탐방 중...',
-  '토스·카카오·네이버의 엔지니어링 비밀을 여는 중...',
   '알고리즘이 최적의 글을 선별하는 중...',
+  '세상의 모든 개발 인사이트를 수집하는 중...',
+  '토스·카카오·네이버의 엔지니어링 비밀을 여는 중...',
+  '스타트업 기술 블로그 탐방 중...',
+  '코드 리뷰 마치고 돌아오는 중...',
+  '도서관에서 맞춤형 책 찾는 중...',
 ];
 
-export default function GoatLoadingScreen() {
+// 진행률 공식: MAX * (1 - e^(-elapsed / TIME_SCALE))
+// TIME_SCALE=35s → 35s에 63%, 60s에 82%, 90s에 92%, 무한대에 98%에 수렴
+const MAX_PROGRESS = 98;
+const TIME_SCALE = 35;
+
+type Props = { isReady: boolean };
+
+export default function GoatLoadingScreen({ isReady }: Props) {
   const router = useRouter();
   const [msgIdx, setMsgIdx] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const startRef = useRef(Date.now());
 
   useEffect(() => {
-    const show = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(show);
+    const t = setTimeout(() => setVisible(true), 50);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
@@ -32,9 +41,24 @@ export default function GoatLoadingScreen() {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    if (isReady) {
+      setProgress(100);
+      return;
+    }
+    const tick = setInterval(() => {
+      const elapsed = (Date.now() - startRef.current) / 1000;
+      const p = MAX_PROGRESS * (1 - Math.exp(-elapsed / TIME_SCALE));
+      setProgress(p);
+    }, 200);
+    return () => clearInterval(tick);
+  }, [isReady]);
+
   const handleClick = (c: GoatCollection) => {
     router.push(`/collections/${parseInt(c.number)}`);
   };
+
+  const pct = Math.min(Math.floor(progress), 100);
 
   return (
     <div className={`goat-loading ${visible ? 'visible' : ''}`}>
@@ -89,12 +113,16 @@ export default function GoatLoadingScreen() {
       </div>
 
       <div className="goat-loading-status">
-        <div className="goat-loading-dots">
-          <span className="goat-dot" />
-          <span className="goat-dot" />
-          <span className="goat-dot" />
+        <div className="goat-progress-row">
+          <span className="goat-loading-msg">{LOADING_MESSAGES[msgIdx]}</span>
+          <span className="goat-progress-pct">{pct}%</span>
         </div>
-        <span className="goat-loading-msg">{LOADING_MESSAGES[msgIdx]}</span>
+        <div className="goat-progress-track">
+          <div
+            className="goat-progress-fill"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
     </div>
   );

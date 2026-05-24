@@ -80,6 +80,7 @@ export function toCompany(c: ApiCompany): Company {
 
 export interface FetchArticlesParams {
   sector?: string;
+  companyId?: string | null;
   q?: string;
   tag?: string;
   cursor?: string | null;
@@ -95,6 +96,7 @@ export interface ArticlesResult {
 export async function fetchArticles(params: FetchArticlesParams = {}): Promise<ArticlesResult> {
   const sp = new URLSearchParams();
   if (params.sector && params.sector !== 'all') sp.set('sector', params.sector);
+  if (params.companyId) sp.set('companyId', params.companyId);
   if (params.q?.trim()) sp.set('q', params.q.trim());
   if (params.tag) sp.set('tag', params.tag);
   if (params.cursor) sp.set('cursor', params.cursor);

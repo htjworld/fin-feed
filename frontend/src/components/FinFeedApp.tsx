@@ -110,6 +110,7 @@ export default function FinFeedApp() {
     try {
       const result = await fetchArticles({
         sector,
+        companyId: company || undefined,
         q: query || undefined,
         tag: tag || undefined,
         cursor: reset ? undefined : currentCursor ?? undefined,
@@ -128,7 +129,7 @@ export default function FinFeedApp() {
         setLoadingMore(false);
       }
     }
-  }, [sector, tag, query]);
+  }, [sector, company, tag, query]);
 
   useEffect(() => {
     doFetch(true, null);
@@ -178,9 +179,6 @@ export default function FinFeedApp() {
       const coll = COLLECTIONS.find((c) => c.id === collection);
       if (coll) arr = arr.filter((a) => coll.article_ids.includes(a.id));
     }
-    if (company) {
-      arr = arr.filter((a) => a.company === company);
-    }
     if (date && date !== 'all') {
       const now = new Date();
       const cutoff = new Date(now);
@@ -193,7 +191,7 @@ export default function FinFeedApp() {
       arr.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
     }
     return arr;
-  }, [articles, company, date, collection, isSearch, query]);
+  }, [articles, date, collection, isSearch, query]);
 
   const matchingCollections = useMemo(() => {
     if (!query) return [];
@@ -321,7 +319,7 @@ export default function FinFeedApp() {
               {/* Loading Screen (server sleeping) */}
               {showLoadingScreen ? (
                 <div className={`goat-loading-wrap ${loadingFading ? 'goat-fade-out' : ''}`}>
-                  <GoatLoadingScreen />
+                  <GoatLoadingScreen isReady={!loading} />
                 </div>
               ) : (
                   <div className="content-fade-in">
