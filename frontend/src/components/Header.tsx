@@ -116,8 +116,7 @@ export default function Header({ query, setQuery, onSelect, onReset, onFilterOpe
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>필터</span>
         </button>
         <button className="hbtn desktop-only">
-          <span className="live-dot" />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>LIVE · 6h sync</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>AUTO-SYNC · 6h</span>
         </button>
         <button className="hbtn desktop-only"><Ic.rss /></button>
         <button className="hbtn desktop-only"><Ic.bell /></button>

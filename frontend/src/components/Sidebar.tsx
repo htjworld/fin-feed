@@ -97,7 +97,7 @@ export default function Sidebar({ filters, setFilters, sectors, inCollection = f
       <div className="side-section">
         <div className="side-label">섹터 <span className="count">SECTOR</span></div>
         <div className="sector-list">
-          {sectors.map((s) => (
+          {sectors.filter((s) => s.id === 'all' || s.count > 0).map((s) => (
             <button
               key={s.id}
               className={`sector-item ${filters.sector === s.id ? 'active' : ''}`}

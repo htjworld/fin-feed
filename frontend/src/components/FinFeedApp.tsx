@@ -384,7 +384,7 @@ export default function FinFeedApp() {
                             <span>·</span>
                             <span>{fSector?.label}</span>
                             <span>·</span>
-                            <span style={{ color: 'var(--accent-2)' }}>READ {featured.read.toUpperCase()} →</span>
+                            <span style={{ color: 'var(--accent-2)' }}>READ ARTICLE →</span>
                           </div>
                         </div>
                         <div className="hero-right">
@@ -393,7 +393,7 @@ export default function FinFeedApp() {
                               <Thumbnail article={featured} company={fCompany} sector={fSector ?? sectorsWithCounts[0]} />
                             </div>
                             <div className="hero-thumb-cap">
-                              <span className="ht-cap-lab">FEATURED · {featured.read} READ</span>
+                              <span className="ht-cap-lab">FEATURED</span>
                               <span className="ht-cap-arrow"><Ic.arrow /></span>
                             </div>
                           </div>
