@@ -38,6 +38,9 @@ public class Company {
     @Column(name = "crawl_type", length = 20)
     private CrawlType crawlType = CrawlType.RSS;
 
+    @Column(length = 20)
+    private String color = "#888888";
+
     @Column(name = "is_active")
     private boolean active = true;
 
@@ -57,6 +60,7 @@ public class Company {
     public String getNameEn() { return nameEn; }
     public String getLogoUrl() { return logoUrl; }
     public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }
+    public String getColor() { return color != null ? color : "#888888"; }
     public String getRssUrl() { return rssUrl; }
     public String getSiteUrl() { return siteUrl; }
     public String getBlogUrl() { return blogUrl; }

@@ -18,10 +18,17 @@ CREATE TABLE IF NOT EXISTS companies (
 
 -- UNIQUE 제약: 이미 있으면 스킵
 DO $$ BEGIN
-  BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'companies_name_en_unique'
+  ) THEN
     ALTER TABLE companies ADD CONSTRAINT companies_name_en_unique UNIQUE (name_en);
-  EXCEPTION WHEN duplicate_object THEN NULL;
-  END;
+  END IF;
+END $$;
+
+-- 회사 대표 색상 컬럼 (멱등)
+DO $$ BEGIN
+  ALTER TABLE companies ADD COLUMN color VARCHAR(20) DEFAULT '#888888';
+EXCEPTION WHEN duplicate_column THEN NULL;
 END $$;
 
 CREATE TABLE IF NOT EXISTS parsing_selectors (

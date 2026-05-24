@@ -11,7 +11,7 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @Query(value = """
             SELECT c.id, c.name, c.name_en, c.logo_url, c.site_url, c.sector,
-                   COUNT(a.id) AS article_count
+                   COUNT(a.id) AS article_count, c.color
             FROM companies c
             LEFT JOIN articles a ON a.company_id = c.id
             WHERE c.is_active = true
