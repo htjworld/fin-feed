@@ -5,10 +5,6 @@ import GoatCard from '@/components/GoatCard';
 
 export const revalidate = 86400;
 
-export async function generateStaticParams() {
-  return GOAT_COLLECTIONS.map((_, i) => ({ id: String(i + 1) }));
-}
-
 async function getOgImage(url: string): Promise<string | null> {
   if (!url) return null;
   try {

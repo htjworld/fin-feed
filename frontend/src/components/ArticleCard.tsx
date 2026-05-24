@@ -5,7 +5,6 @@ import { CATEGORY_BY_ID, SECTOR_BY_ID } from '@/data';
 import { useApp } from '@/context/AppContext';
 import Thumbnail from './Thumbnail';
 import { Ic } from './Icons';
-import { fmtDate } from './utils';
 
 type Props = {
   article: Article;
@@ -50,13 +49,6 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
       )}
       <Thumbnail article={article} company={company} sector={sector} />
       <div className="card-body">
-        <div className="card-meta">
-          <span style={{ color: 'var(--ink-2)', fontWeight: 500 }}>{company.name}</span>
-          <span className="sep" />
-          <span className="date">{fmtDate(article.published_at)}</span>
-          <span className="sep" />
-          <span><Ic.clock style={{ verticalAlign: -1, marginRight: 3 }} />{article.read}</span>
-        </div>
         <h3 className="card-title">{highlight(article.title, query)}</h3>
         <p className="card-summary">{highlight(article.summary, query)}</p>
         <div className="card-foot">

@@ -1,4 +1,4 @@
-const TODAY = new Date('2026-05-16T00:00:00');
+const TODAY = new Date();
 
 export function fmtDate(iso: string): string {
   const d = new Date(iso);
