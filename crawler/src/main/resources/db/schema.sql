@@ -24,6 +24,12 @@ DO $$ BEGIN
   END;
 END $$;
 
+-- 회사 대표 색상 컬럼 (멱등)
+DO $$ BEGIN
+  ALTER TABLE companies ADD COLUMN color VARCHAR(20) DEFAULT '#888888';
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
 CREATE TABLE IF NOT EXISTS parsing_selectors (
     id                 BIGSERIAL PRIMARY KEY,
     company_id         BIGINT REFERENCES companies(id) UNIQUE NOT NULL,

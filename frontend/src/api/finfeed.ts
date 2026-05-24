@@ -2,14 +2,6 @@ import type { Article, Company } from '@/types';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
-const SECTOR_COLORS: Record<string, string> = {
-  domestic_bank: '#0046FF',
-  domestic_fintech: '#0064FF',
-  domestic_securities: '#F37321',
-  crypto: '#F0B90B',
-  global_fintech: '#635BFF',
-};
-
 interface ApiCompany {
   id: number;
   name: string;
@@ -18,6 +10,7 @@ interface ApiCompany {
   siteUrl: string;
   sector: string;
   articleCount: number;
+  color: string | null;
 }
 
 interface ApiArticleCompany {
@@ -72,7 +65,7 @@ export function toCompany(c: ApiCompany): Company {
     name: c.name,
     name_en: c.nameEn,
     sector: c.sector,
-    color: SECTOR_COLORS[c.sector] ?? '#888',
+    color: c.color ?? '#888888',
     count: c.articleCount,
     logo_url: c.logoUrl ? (c.logoUrl.startsWith('/') ? `${BASE}${c.logoUrl}` : c.logoUrl) : undefined,
   };

@@ -9,7 +9,8 @@ public record CompanyResponse(
         String logoUrl,
         String siteUrl,
         String sector,
-        long articleCount
+        long articleCount,
+        String color
 ) {
     public static CompanyResponse of(Object[] row) {
         return new CompanyResponse(
@@ -19,7 +20,8 @@ public record CompanyResponse(
                 (String) row[3],
                 (String) row[4],
                 (String) row[5],
-                ((Number) row[6]).longValue()
+                ((Number) row[6]).longValue(),
+                row.length > 7 && row[7] != null ? (String) row[7] : "#888888"
         );
     }
 
@@ -31,7 +33,8 @@ public record CompanyResponse(
                 company.getLogoUrl(),
                 company.getSiteUrl(),
                 company.getSector() != null ? company.getSector().getValue() : null,
-                articleCount
+                articleCount,
+                company.getColor()
         );
     }
 }

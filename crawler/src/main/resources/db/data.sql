@@ -38,6 +38,28 @@ INSERT INTO companies (name, name_en, rss_url, site_url, sector, crawl_type, is_
 
 ON CONFLICT (name_en) DO NOTHING;
 
+-- 회사별 대표 색상 (브랜드 HEX 기준, 재실행 안전)
+UPDATE companies SET color = '#0064FF' WHERE name_en = 'Toss';
+UPDATE companies SET color = '#FFCD00' WHERE name_en = 'KakaoPay';
+UPDATE companies SET color = '#03C75A' WHERE name_en = 'NaverPay';
+UPDATE companies SET color = '#00C9AE' WHERE name_en = 'Banksalad';
+UPDATE companies SET color = '#FAE100' WHERE name_en = 'Kakao';
+UPDATE companies SET color = '#5C67F5' WHERE name_en = 'Jobis&Villains';
+UPDATE companies SET color = '#FAC900' WHERE name_en = 'KakaoBank';
+UPDATE companies SET color = '#FF3B3B' WHERE name_en = 'Kaia';
+UPDATE companies SET color = '#635BFF' WHERE name_en = 'Stripe';
+UPDATE companies SET color = '#111111' WHERE name_en = 'Plaid';
+UPDATE companies SET color = '#0068EB' WHERE name_en = 'Revolut';
+UPDATE companies SET color = '#9FE870' WHERE name_en = 'Wise';
+UPDATE companies SET color = '#820AD1' WHERE name_en = 'Nubank';
+UPDATE companies SET color = '#FF3460' WHERE name_en = 'Monzo';
+UPDATE companies SET color = '#48AC98' WHERE name_en = 'N26';
+UPDATE companies SET color = '#00C805' WHERE name_en = 'Robinhood';
+UPDATE companies SET color = '#3AB44A' WHERE name_en = 'Block';
+UPDATE companies SET color = '#F26B21' WHERE name_en = 'Brex';
+UPDATE companies SET color = '#0052FF' WHERE name_en = 'Coinbase';
+UPDATE companies SET color = '#FF4E50' WHERE name_en = 'Finda';
+
 -- ============================================================
 -- 컬렉션 (테마별 큐레이션)
 -- 매칭 안 된 아티클은 INSERT 0 rows로 조용히 스킵됨
