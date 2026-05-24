@@ -14,16 +14,19 @@ public class CrawlController {
     private final CrawlingService crawlingService;
     private final LogoCrawlerService logoCrawlerService;
     private final RssCrawlerService rssCrawlerService;
+    private final TossBackfillService tossBackfillService;
 
     @Value("${crawler.api-key}")
     private String apiKey;
 
     public CrawlController(CrawlingService crawlingService,
                            LogoCrawlerService logoCrawlerService,
-                           RssCrawlerService rssCrawlerService) {
+                           RssCrawlerService rssCrawlerService,
+                           TossBackfillService tossBackfillService) {
         this.crawlingService = crawlingService;
         this.logoCrawlerService = logoCrawlerService;
         this.rssCrawlerService = rssCrawlerService;
+        this.tossBackfillService = tossBackfillService;
     }
 
     @PostMapping
@@ -76,5 +79,14 @@ public class CrawlController {
 
         int count = logoCrawlerService.crawlAllLogos();
         return ResponseEntity.ok(Map.of("updatedLogosCount", count));
+    }
+
+    @PostMapping("/toss-backfill")
+    public ResponseEntity<Map<String, Object>> tossBackfill(
+            @RequestHeader("X-Crawler-Key") String key) {
+        if (!apiKey.equals(key)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        int added = tossBackfillService.backfill();
+        return ResponseEntity.ok(Map.of("articlesAdded", added));
     }
 }
