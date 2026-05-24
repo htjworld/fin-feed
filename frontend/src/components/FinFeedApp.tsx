@@ -321,7 +321,7 @@ export default function FinFeedApp() {
               {/* Loading Screen (server sleeping) */}
               {showLoadingScreen ? (
                 <div className={`goat-loading-wrap ${loadingFading ? 'goat-fade-out' : ''}`}>
-                  <GoatLoadingScreen />
+                  <GoatLoadingScreen isReady={!loading} />
                 </div>
               ) : (
                   <div className="content-fade-in">
