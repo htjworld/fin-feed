@@ -1,11 +1,22 @@
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 
-// 모듈 레벨 싱글턴 — 페이지 이동에도 초기화되지 않음
-const _session = {
-  startTime: Date.now(),
-  dismissed: false,
-};
+// sessionStorage로 새로고침에도 startTime·dismissed 유지
+// 탭 닫기 → 자동 초기화 (서버 재冷스타트 시 로딩바 재출현)
+function initSession() {
+  if (typeof window === 'undefined') {
+    return { startTime: Date.now(), dismissed: false };
+  }
+  const stored = sessionStorage.getItem('ff_start');
+  const startTime = stored ? parseInt(stored, 10) : Date.now();
+  if (!stored) sessionStorage.setItem('ff_start', String(startTime));
+  return {
+    startTime,
+    dismissed: sessionStorage.getItem('ff_done') === '1',
+  };
+}
+
+const _session = initSession();
 import { useSearchParams, useRouter } from 'next/navigation';
 import { COLLECTIONS, SECTORS, CATEGORIES } from '@/data';
 import type { Filters, Collection, Article, Sector, Company } from '@/types';
@@ -149,6 +160,7 @@ export default function FinFeedApp() {
       setLoadingFading(true);
       const t = setTimeout(() => {
         _session.dismissed = true;
+        sessionStorage.setItem('ff_done', '1');
         setShowLoadingScreen(false);
         setLoadingFading(false);
       }, 600);
