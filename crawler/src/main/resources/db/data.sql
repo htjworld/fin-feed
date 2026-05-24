@@ -18,7 +18,7 @@ INSERT INTO companies (name, name_en, rss_url, site_url, sector, crawl_type, is_
 ('카카오뱅크', 'KakaoBank', 'https://tech.kakaobank.com/index.xml', 'https://tech.kakaobank.com', 'domestic_bank', 'RSS', true, '/logos/kakaobank.png'),
 
 -- 가상자산
-('클레이튼', 'Klaytn', 'https://blog.kaia.io/feed/', 'https://blog.kaia.io', 'crypto', 'RSS', true, '/logos/klaytn.png'),
+('카이아', 'Kaia', 'https://blog.kaia.io/feed/', 'https://blog.kaia.io', 'crypto', 'RSS', true, '/logos/klaytn.png'),
 
 -- 해외 핀테크
 ('Stripe',   'Stripe',   'https://stripe.com/blog/feed.rss',                 'https://stripe.com/blog/engineering',      'global_fintech', 'RSS', true, '/logos/stripe.svg'),
