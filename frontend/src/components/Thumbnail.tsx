@@ -4,6 +4,7 @@ import type { Article, Company, Sector } from '@/types';
 import { THUMB_BG } from '@/data';
 import { Ic } from './Icons';
 import { fmtAbsDate, textFitSize, readableInk } from './utils';
+import GeneratedThumbnail from './GeneratedThumbnail';
 
 type Props = {
   article: Article;
@@ -92,43 +93,15 @@ return (
     );
   }
 
-  // Tier 4: text fallback
+  // Tier 4: generated thumbnail
   return (
     <div className="thumb thumb-text" style={{ '--g1': grad[0], '--g2': grad[1] } as React.CSSProperties}>
-      <div className="thumb-bg" style={{ background: `linear-gradient(135deg, ${grad[0]}, ${grad[1]})` }} />
-      <svg className="thumb-text-svg" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <linearGradient id={`tg-${article.id}`} x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.75)" />
-          </linearGradient>
-        </defs>
-        <text
-          x="160" y="92"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontFamily="Newsreader, Georgia, serif"
-          fontStyle="italic"
-          fontWeight="500"
-          fontSize={textFitSize(company.name, 240)}
-          fill={`url(#tg-${article.id})`}
-          letterSpacing="-0.01em"
-        >
-          {company.name}
-        </text>
-        <text
-          x="160" y="128"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontFamily="Geist Mono, monospace"
-          fontSize="11"
-          fill="rgba(255,255,255,0.45)"
-          letterSpacing="0.22em"
-        >
-          {company.name_en.toUpperCase()}
-        </text>
-        <line x1="120" y1="146" x2="200" y2="146" stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" />
-      </svg>
+      <GeneratedThumbnail
+        title={article.title}
+        company={company.name}
+        color={company.color}
+        logoUrl={company.logo_url || undefined}
+      />
       {corner}
       {pin}
       {tag}

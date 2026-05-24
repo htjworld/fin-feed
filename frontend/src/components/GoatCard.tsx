@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import type { GoatArticle } from '@/data/goat-collections';
 import { GOAT_COMPANY_COLORS, GOAT_THUMB_BG } from '@/data/goat-collections';
+import GeneratedThumbnail from './GeneratedThumbnail';
 
 type Props = {
   article: GoatArticle;
@@ -36,7 +37,7 @@ export default function GoatCard({ article, resolvedThumbUrl, index }: Props) {
             <div className="thumb-bg" style={{ backgroundImage: `url(${resolvedThumbUrl})` }} />
           </>
         ) : (
-          <div className="thumb-bg" style={{ background: `linear-gradient(135deg, ${g1}, ${g2})` }} />
+          <GeneratedThumbnail title={article.title} company={article.company} color={color} />
         )}
         <div className="thumb-scrim" />
         <div className="thumb-corner">
