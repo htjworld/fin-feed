@@ -3,35 +3,6 @@ import { notFound } from 'next/navigation';
 import { GOAT_COLLECTIONS } from '@/data/goat-collections';
 import GoatCard from '@/components/GoatCard';
 
-export const revalidate = 86400;
-
-async function getOgImage(url: string): Promise<string | null> {
-  if (!url) return null;
-  try {
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(url, {
-      signal: controller.signal,
-      next: { revalidate: 86400 },
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-      },
-    });
-    clearTimeout(t);
-    if (!res.ok) return null;
-    const html = await res.text();
-    const ogTag = html.match(/<meta[^>]+og:image[^>]+>/i)?.[0] ?? '';
-    const content = ogTag.match(/content=["']([^"']+)["']/)?.[1] ?? null;
-    if (!content) return null;
-    // 상대경로를 절대 URL로 변환
-    if (content.startsWith('http')) return content;
-    const base = new URL(url);
-    return new URL(content, base.origin).toString();
-  } catch {
-    return null;
-  }
-}
-
 export default async function GoatCollectionPage({
   params,
 }: {
@@ -44,14 +15,10 @@ export default async function GoatCollectionPage({
 
   const collection = GOAT_COLLECTIONS[idx];
 
-  const articlesWithThumbs = await Promise.all(
-    collection.articles.map(async (article) => {
-      const resolvedThumbUrl = article.thumb_url
-        ? article.thumb_url
-        : await getOgImage(article.url);
-      return { ...article, resolvedThumbUrl };
-    })
-  );
+  const articlesWithThumbs = collection.articles.map((article) => ({
+    ...article,
+    resolvedThumbUrl: article.thumb_url ?? null,
+  }));
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--ink)' }}>
