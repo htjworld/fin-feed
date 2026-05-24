@@ -54,8 +54,7 @@ export default function Thumbnail({ article, company, sector }: Props) {
   if (tier === 3) {
     const initials = company.name_en.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase();
     const hasLogo = !!company.logo_url;
-    console.log("Thumbnail logo fallback debug - Company:", company.name, "logo_url:", company.logo_url, "hasLogo:", hasLogo);
-    return (
+return (
       <div className="thumb thumb-logo" style={{ background: `linear-gradient(135deg, ${grad[0]}, ${grad[1]})` }}>
         <div className="thumb-bg" style={{ background: `linear-gradient(135deg, ${grad[0]}, ${grad[1]})` }} />
         <div

@@ -11,7 +11,7 @@ import ArticleCard from './ArticleCard';
 import ActiveFilters from './ActiveFilters';
 import CollectionCard from './CollectionCard';
 import CollectionsSection from './CollectionsSection';
-import DbCollectionsSection from './DbCollectionsSection';
+import GoatLoadingScreen from './GoatLoadingScreen';
 import Thumbnail from './Thumbnail';
 import { Ic } from './Icons';
 
@@ -21,7 +21,6 @@ export default function FinFeedApp() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // URL에서 파생되는 상태
   const query    = searchParams.get('q')       ?? '';
   const sector   = searchParams.get('sector')  ?? 'all';
   const company  = searchParams.get('company') ?? '';
@@ -29,10 +28,13 @@ export default function FinFeedApp() {
   const date     = searchParams.get('date')    ?? 'all';
   const view     = (searchParams.get('view')   ?? 'card') as ViewMode;
 
-  // URL에 저장하지 않는 로컬 상태
   const [collection, setCollection] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // URL 파라미터 일괄 업데이트 (기본값은 삭제해 URL을 깔끔하게)
+  // Loading screen state
+  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
+  const [loadingFading, setLoadingFading] = useState(false);
+
   const updateParams = useCallback((updates: Record<string, string | null>) => {
     const p = new URLSearchParams(searchParams.toString());
     for (const [k, v] of Object.entries(updates)) {
@@ -43,7 +45,6 @@ export default function FinFeedApp() {
     router.replace(qs ? `?${qs}` : '/', { scroll: false });
   }, [searchParams, router]);
 
-  // filters 객체: 기존 하위 컴포넌트 인터페이스 유지
   const filters: Filters = useMemo(() => ({
     sector,
     companies: company ? [company] : [],
@@ -52,7 +53,6 @@ export default function FinFeedApp() {
     collection,
   }), [sector, company, tag, date, collection]);
 
-  // setFilters: Sidebar/ActiveFilters의 기존 호출 방식 유지
   const setFilters = useCallback((updater: Filters | ((f: Filters) => Filters)) => {
     const next = typeof updater === 'function' ? updater(filters) : updater;
     if (next.collection !== collection) setCollection(next.collection);
@@ -72,7 +72,6 @@ export default function FinFeedApp() {
     updateParams({ view: v });
   }, [updateParams]);
 
-  // 아티클 데이터
   const [articles, setArticles] = useState<Article[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [dbArticleCount, setDbArticleCount] = useState<number | null>(null);
@@ -103,7 +102,6 @@ export default function FinFeedApp() {
     fetchArticleCount().then(setDbArticleCount).catch(console.error);
   }, []);
 
-  // sector/tag/query 변경 시 cursor 자동 초기화 (primitive deps → 안정적)
   const doFetch = useCallback(async (reset: boolean, currentCursor: string | null) => {
     const id = ++fetchRef.current;
     if (reset) setFetchError(false);
@@ -132,13 +130,21 @@ export default function FinFeedApp() {
     }
   }, [sector, tag, query]);
 
-  const loadArticles = useCallback((reset: boolean) => {
-    doFetch(reset, reset ? null : cursor);
-  }, [doFetch, cursor]);
-
   useEffect(() => {
     doFetch(true, null);
   }, [doFetch]);
+
+  // Trigger fade-out animation when loading completes
+  useEffect(() => {
+    if (!loading && showLoadingScreen) {
+      setLoadingFading(true);
+      const t = setTimeout(() => {
+        setShowLoadingScreen(false);
+        setLoadingFading(false);
+      }, 600);
+      return () => clearTimeout(t);
+    }
+  }, [loading, showLoadingScreen]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -222,6 +228,7 @@ export default function FinFeedApp() {
   const fCompany = featured ? companyById[featured.company] : null;
   const fSector = fCompany ? sectorsWithCounts.find((s) => s.id === fCompany.sector) ?? sectorsWithCounts[0] : sectorsWithCounts[0];
 
+  // Eyebrow / title logic
   let eyebrowNode: React.ReactNode;
   let titleNode: React.ReactNode;
 
@@ -268,12 +275,20 @@ export default function FinFeedApp() {
           setQuery={setQuery}
           onSelect={onSelectFromSearch}
           onReset={onReset}
+          onFilterOpen={() => setSidebarOpen((v) => !v)}
+          filterOpen={sidebarOpen}
+        />
+        <div
+          className={`sidebar-backdrop${sidebarOpen ? ' visible' : ''}`}
+          onClick={() => setSidebarOpen(false)}
         />
         <Sidebar
           filters={filters}
           setFilters={setFilters}
           sectors={sectorsWithCounts}
           inCollection={collection !== null}
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
         />
         <main className="main">
           <div className="main-inner">
@@ -302,191 +317,195 @@ export default function FinFeedApp() {
               </div>
             </div>
 
-            <ActiveFilters filters={filters} setFilters={setFilters} query={query} setQuery={setQuery} />
+            <>
+              {/* Loading Screen (server sleeping) */}
+              {showLoadingScreen ? (
+                <div className={`goat-loading-wrap ${loadingFading ? 'goat-fade-out' : ''}`}>
+                  <GoatLoadingScreen />
+                </div>
+              ) : (
+                  <div className="content-fade-in">
+                    <ActiveFilters filters={filters} setFilters={setFilters} query={query} setQuery={setQuery} />
 
-            {activeCollection && (
-              <div className="coll-header" style={{ '--coll-accent': activeCollection.accent } as React.CSSProperties}>
-                <div>
-                  <div className="coll-header-eyebrow">
-                    <span>★ COLLECTION · {activeCollection.number}</span>
-                    {activeCollection.subtitle && <span>· {activeCollection.subtitle}</span>}
-                  </div>
-                  <h2>{activeCollection.title}</h2>
-                  <p>{activeCollection.desc}</p>
-                  <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
-                    <button
-                      className="hbtn primary"
-                      style={{ background: 'var(--brand-tint)', color: 'var(--brand)', borderColor: 'transparent' }}
-                      onClick={() => setFilters((f) => ({ ...f, collection: null }))}
-                    >
-                      ← 컬렉션 닫기
-                    </button>
-                  </div>
-                </div>
-                <div className="coll-header-stats">
-                  <div className="coll-header-stat">
-                    <span className="n">{displayed.length}</span>
-                    <span className="l">CLASSICS</span>
-                  </div>
-                </div>
-              </div>
-            )}
+                    {activeCollection && (
+                      <div className="coll-header" style={{ '--coll-accent': activeCollection.accent } as React.CSSProperties}>
+                        <div>
+                          <div className="coll-header-eyebrow">
+                            <span>★ COLLECTION · {activeCollection.number}</span>
+                            {activeCollection.subtitle && <span>· {activeCollection.subtitle}</span>}
+                          </div>
+                          <h2>{activeCollection.title}</h2>
+                          <p>{activeCollection.desc}</p>
+                          <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
+                            <button
+                              className="hbtn primary"
+                              style={{ background: 'var(--brand-tint)', color: 'var(--brand)', borderColor: 'transparent' }}
+                              onClick={() => setFilters((f) => ({ ...f, collection: null }))}
+                            >
+                              ← 컬렉션 닫기
+                            </button>
+                          </div>
+                        </div>
+                        <div className="coll-header-stats">
+                          <div className="coll-header-stat">
+                            <span className="n">{displayed.length}</span>
+                            <span className="l">CLASSICS</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-            {isSearch && matchingCollections.length > 0 && (
-              <>
-                <div className="section-head">
-                  <h3>매칭 <span className="ital">컬렉션</span></h3>
-                  <span className="sub">{matchingCollections.length} COLLECTION{matchingCollections.length === 1 ? '' : 'S'}</span>
-                </div>
-                <div className="coll-grid" style={{ marginBottom: 28 }}>
-                  {matchingCollections.map((c) => (
-                    <CollectionCard key={c.id} collection={c} onOpen={openCollection} />
-                  ))}
-                </div>
-              </>
-            )}
+                    {isSearch && matchingCollections.length > 0 && (
+                      <>
+                        <div className="section-head">
+                          <h3>매칭 <span className="ital">컬렉션</span></h3>
+                          <span className="sub">{matchingCollections.length} COLLECTION{matchingCollections.length === 1 ? '' : 'S'}</span>
+                        </div>
+                        <div className="coll-grid" style={{ marginBottom: 28 }}>
+                          {matchingCollections.map((c) => (
+                            <CollectionCard key={c.id} collection={c} onOpen={openCollection} />
+                          ))}
+                        </div>
+                      </>
+                    )}
 
-            {showHero && featured && fCompany && (
-              <div className="hero" style={{ cursor: featured.url ? 'pointer' : 'default' }} onClick={() => featured.url && window.open(featured.url, '_blank', 'noopener,noreferrer')}>
-                <div className="hero-left">
-                  <div className="hero-eyebrow"><span className="dot" /> THIS WEEK · 최신 아티클</div>
-                  <h2>{featured.title}</h2>
-                  <p>{featured.summary}</p>
-                  <div className="hero-meta">
-                    <span style={{ color: '#fff', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: 2, background: fCompany.color, display: 'inline-block' }} />
-                      {fCompany.name_en.toUpperCase()}
-                    </span>
-                    <span>{new Date(featured.published_at).toLocaleDateString('ko-KR')}</span>
-                    <span>·</span>
-                    <span>{fSector?.label}</span>
-                    <span>·</span>
-                    <span style={{ color: 'var(--accent-2)' }}>READ {featured.read.toUpperCase()} →</span>
-                  </div>
-                </div>
-                <div className="hero-right">
-                  <div className="hero-thumb">
-                    <div className="hero-thumb-frame">
-                      <Thumbnail article={featured} company={fCompany} sector={fSector ?? sectorsWithCounts[0]} />
-                    </div>
-                    <div className="hero-thumb-cap">
-                      <span className="ht-cap-lab">FEATURED · {featured.read} READ</span>
-                      <span className="ht-cap-arrow"><Ic.arrow /></span>
-                    </div>
-                  </div>
-                  <div className="hero-stats">
-                    <div className="hero-stat">
-                      <span className="num">{(dbArticleCount ?? totalCount).toLocaleString()}</span>
-                      <span className="lab">Articles indexed</span>
-                    </div>
-                    <div className="hero-stat">
-                      <span className="num">{companies.length}</span>
-                      <span className="lab">Companies tracked</span>
-                    </div>
-                    <div className="hero-stat">
-                      <span className="num">6<span className="unit">hrs</span></span>
-                      <span className="lab">Sync interval</span>
-                    </div>
-                    <div className="hero-stat">
-                      <span className="num">12</span>
-                      <span className="lab">Sources monitored</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                    {showHero && featured && fCompany && (
+                      <div className="hero" style={{ cursor: featured.url ? 'pointer' : 'default' }} onClick={() => featured.url && window.open(featured.url, '_blank', 'noopener,noreferrer')}>
+                        <div className="hero-left">
+                          <div className="hero-eyebrow"><span className="dot" /> THIS WEEK · 최신 아티클</div>
+                          <h2>{featured.title}</h2>
+                          <p>{featured.summary}</p>
+                          <div className="hero-meta">
+                            <span style={{ color: '#fff', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ width: 8, height: 8, borderRadius: 2, background: fCompany.color, display: 'inline-block' }} />
+                              {fCompany.name_en.toUpperCase()}
+                            </span>
+                            <span>{new Date(featured.published_at).toLocaleDateString('ko-KR')}</span>
+                            <span>·</span>
+                            <span>{fSector?.label}</span>
+                            <span>·</span>
+                            <span style={{ color: 'var(--accent-2)' }}>READ {featured.read.toUpperCase()} →</span>
+                          </div>
+                        </div>
+                        <div className="hero-right">
+                          <div className="hero-thumb">
+                            <div className="hero-thumb-frame">
+                              <Thumbnail article={featured} company={fCompany} sector={fSector ?? sectorsWithCounts[0]} />
+                            </div>
+                            <div className="hero-thumb-cap">
+                              <span className="ht-cap-lab">FEATURED · {featured.read} READ</span>
+                              <span className="ht-cap-arrow"><Ic.arrow /></span>
+                            </div>
+                          </div>
+                          <div className="hero-stats">
+                            <div className="hero-stat">
+                              <span className="num">{(dbArticleCount ?? totalCount).toLocaleString()}</span>
+                              <span className="lab">Articles indexed</span>
+                            </div>
+                            <div className="hero-stat">
+                              <span className="num">{companies.length}</span>
+                              <span className="lab">Companies tracked</span>
+                            </div>
+                            <div className="hero-stat">
+                              <span className="num">6<span className="unit">hrs</span></span>
+                              <span className="lab">Sync interval</span>
+                            </div>
+                            <div className="hero-stat">
+                              <span className="num">12</span>
+                              <span className="lab">Sources monitored</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-            {sector !== 'all' && !isSearch && !activeCollection && (
-              <div className="sector-banner">
-                <div className="sb-mark" style={{ background: fSector?.accent, color: '#fff' }}>
-                  {sectorsWithCounts.find((s) => s.id === sector)?.label[0]}
-                </div>
-                <div className="sb-body">
-                  <h2 className="sb-title">{sectorsWithCounts.find((s) => s.id === sector)?.label} 섹터</h2>
-                  <p className="sb-desc">
-                    {({
-                      domestic_bank: '국내 시중·인터넷 은행과 IT 자회사의 코어뱅킹, 인증, 24시간 이체 인프라.',
-                      domestic_securities: '증권·투자 도메인의 HTS, 매칭 엔진, 실시간 시세 처리.',
-                      domestic_fintech: '결제·송금·마이데이터를 다루는 국내 핀테크 엔지니어링.',
-                      crypto: '거래소 매칭, 지갑·키 관리, 블록체인 합의 알고리즘.',
-                      global_fintech: 'Stripe, Plaid, Monzo, Revolut 등 글로벌 핀테크의 인프라.',
-                    } as Record<string, string>)[sector]}
-                  </p>
-                </div>
-                <div className="sb-stats">
-                  <div className="sb-stat">
-                    <span className="num">{displayed.length}</span>
-                    <span className="lab">Articles</span>
-                  </div>
-                  <div className="sb-stat">
-                    <span className="num">{companies.filter((c) => c.sector === sector).length}</span>
-                    <span className="lab">Companies</span>
-                  </div>
-                </div>
-              </div>
-            )}
+                    {sector !== 'all' && !isSearch && !activeCollection && (
+                      <div className="sector-banner">
+                        <div className="sb-mark" style={{ background: fSector?.accent, color: '#fff' }}>
+                          {sectorsWithCounts.find((s) => s.id === sector)?.label[0]}
+                        </div>
+                        <div className="sb-body">
+                          <h2 className="sb-title">{sectorsWithCounts.find((s) => s.id === sector)?.label} 섹터</h2>
+                          <p className="sb-desc">
+                            {({
+                              domestic_bank: '국내 시중·인터넷 은행과 IT 자회사의 코어뱅킹, 인증, 24시간 이체 인프라.',
+                              domestic_securities: '증권·투자 도메인의 HTS, 매칭 엔진, 실시간 시세 처리.',
+                              domestic_fintech: '결제·송금·마이데이터를 다루는 국내 핀테크 엔지니어링.',
+                              crypto: '거래소 매칭, 지갑·키 관리, 블록체인 합의 알고리즘.',
+                              global_fintech: 'Stripe, Plaid, Monzo, Revolut 등 글로벌 핀테크의 인프라.',
+                            } as Record<string, string>)[sector]}
+                          </p>
+                        </div>
+                        <div className="sb-stats">
+                          <div className="sb-stat">
+                            <span className="num">{displayed.length}</span>
+                            <span className="lab">Articles</span>
+                          </div>
+                          <div className="sb-stat">
+                            <span className="num">{companies.filter((c) => c.sector === sector).length}</span>
+                            <span className="lab">Companies</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-            {loading ? (
-              <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--ink-4)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                LOADING…
-              </div>
-            ) : fetchError ? (
-              <div className="empty">
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>서버에 연결할 수 없습니다</div>
-                <div style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 20 }}>잠시 후 다시 시도해주세요. 서버가 준비 중일 수 있습니다.</div>
-                <button
-                  className="hbtn"
-                  onClick={() => doFetch(true, null)}
-                  style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
-                >
-                  다시 시도
-                </button>
-              </div>
-            ) : displayed.length === 0 ? (
-              <div className="empty">
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>결과 없음</div>
-                <div style={{ fontSize: 13 }}>다른 키워드를 시도하거나 필터를 줄여보세요.</div>
-              </div>
-            ) : (
-              <>
-                {isSearch && (
-                  <div className="section-head">
-                    <h3>아티클 <span className="ital">매칭</span></h3>
-                    <span className="sub">{displayed.length} HIT{displayed.length === 1 ? '' : 'S'}</span>
+                    {fetchError ? (
+                      <div className="empty">
+                        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>서버에 연결할 수 없습니다</div>
+                        <div style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 20 }}>잠시 후 다시 시도해주세요. 서버가 준비 중일 수 있습니다.</div>
+                        <button
+                          className="hbtn"
+                          onClick={() => doFetch(true, null)}
+                          style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                        >
+                          다시 시도
+                        </button>
+                      </div>
+                    ) : displayed.length === 0 ? (
+                      <div className="empty">
+                        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>결과 없음</div>
+                        <div style={{ fontSize: 13 }}>다른 키워드를 시도하거나 필터를 줄여보세요.</div>
+                      </div>
+                    ) : (
+                      <>
+                        {isSearch && (
+                          <div className="section-head">
+                            <h3>아티클 <span className="ital">매칭</span></h3>
+                            <span className="sub">{displayed.length} HIT{displayed.length === 1 ? '' : 'S'}</span>
+                          </div>
+                        )}
+                        <div className={`grid ${view === 'list' ? 'list' : view === 'gallery' ? 'gallery' : ''}`}>
+                          {displayed.map((a) => (
+                            <ArticleCard key={a.id} article={a} view={view === 'list' ? 'list' : 'grid'} query={isSearch ? query : ''} highlightTags={filters.categories} />
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    <div ref={sentinelRef} style={{ height: 1 }} />
+                    {loadingMore && (
+                      <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--ink-4)', fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>
+                        LOADING…
+                      </div>
+                    )}
+
+                    {!hasNext && displayed.length > 0 && (
+                      <div style={{
+                        display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16,
+                        margin: '40px 0 20px', fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--ink-4)',
+                      }}>
+                        <span style={{ height: 1, flex: 1, background: 'var(--line)' }} />
+                        <span>{displayed.length} 아티클 · 모두 로드됨</span>
+                        <span style={{ height: 1, flex: 1, background: 'var(--line)' }} />
+                      </div>
+                    )}
+
+                    {!isSearch && !isFiltered && (
+                      <CollectionsSection onOpen={openCollection} />
+                    )}
                   </div>
                 )}
-                <div className={`grid ${view === 'list' ? 'list' : view === 'gallery' ? 'gallery' : ''}`}>
-                  {displayed.map((a) => (
-                    <ArticleCard key={a.id} article={a} view={view === 'list' ? 'list' : 'grid'} query={isSearch ? query : ''} highlightTags={filters.categories} />
-                  ))}
-                </div>
               </>
-            )}
-
-            <div ref={sentinelRef} style={{ height: 1 }} />
-            {loadingMore && (
-              <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--ink-4)', fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>
-                LOADING…
-              </div>
-            )}
-
-            {!hasNext && displayed.length > 0 && !loading && (
-              <div style={{
-                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16,
-                margin: '40px 0 20px', fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--ink-4)',
-              }}>
-                <span style={{ height: 1, flex: 1, background: 'var(--line)' }} />
-                <span>{displayed.length} 아티클 · 모두 로드됨</span>
-                <span style={{ height: 1, flex: 1, background: 'var(--line)' }} />
-              </div>
-            )}
-
-            {!isSearch && !isFiltered && (
-              <>
-                <DbCollectionsSection />
-                <CollectionsSection onOpen={openCollection} />
-              </>
-            )}
           </div>
         </main>
       </div>

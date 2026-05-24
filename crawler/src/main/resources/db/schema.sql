@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS companies (
     is_active  BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW()
 );
-ALTER TABLE companies ADD CONSTRAINT IF NOT EXISTS companies_name_en_unique UNIQUE (name_en);
+ALTER TABLE companies ADD CONSTRAINT companies_name_en_unique UNIQUE (name_en);
 
 CREATE TABLE IF NOT EXISTS parsing_selectors (
     id                 BIGSERIAL PRIMARY KEY,
@@ -60,16 +60,3 @@ CREATE TABLE IF NOT EXISTS crawl_logs (
     executed_at    TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS collection (
-    id          BIGSERIAL PRIMARY KEY,
-    name        VARCHAR(100) NOT NULL UNIQUE,
-    description VARCHAR(300),
-    created_at  TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS collection_article (
-    collection_id BIGINT REFERENCES collection(id),
-    article_id    BIGINT REFERENCES articles(id),
-    sort_order    INT DEFAULT 0,
-    PRIMARY KEY (collection_id, article_id)
-);

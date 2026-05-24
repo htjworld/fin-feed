@@ -94,7 +94,7 @@ public class RssCrawlerService {
     }
 
     private String sanitize(String text) {
-        return text == null ? "" : text.replaceAll("<[^>]+>", "").trim();
+        return text == null ? "" : Jsoup.parse(text).text();
     }
 
     private String extractSummary(SyndEntry entry) {
