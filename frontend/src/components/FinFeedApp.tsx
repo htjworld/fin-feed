@@ -190,8 +190,10 @@ export default function FinFeedApp() {
     if (!isSearch) {
       arr.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
     }
+    // hero 카드(articles[0])가 그리드에서 중복 표시되지 않도록 제외
+    if (showHero && arr.length > 0) arr = arr.slice(1);
     return arr;
-  }, [articles, date, collection, isSearch, query]);
+  }, [articles, date, collection, isSearch, query, showHero]);
 
   const matchingCollections = useMemo(() => {
     if (!query) return [];
