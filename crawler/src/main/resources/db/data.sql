@@ -26,12 +26,12 @@ INSERT INTO companies (name, name_en, rss_url, site_url, sector, crawl_type, is_
 ('Revolut',  'Revolut',  'https://medium.com/feed/revolut',                  'https://medium.com/revolut',               'global_fintech', 'RSS', true, '/logos/revolut.png'),
 ('Wise',     'Wise',     'https://medium.com/feed/wise-engineering',          'https://medium.com/wise-engineering',      'global_fintech', 'RSS', true, '/logos/wise.png'),
 ('Nubank',   'Nubank',   'https://building.nubank.com.br/feed/',              'https://building.nubank.com.br',           'global_fintech', 'RSS', true, '/logos/nubank.svg'),
-('Monzo',    'Monzo',    'https://medium.com/feed/monzo-bank',                'https://monzo.com/blog',                   'global_fintech', 'RSS', true, '/logos/monzo.svg'),
+('Monzo',    'Monzo',    'https://medium.com/feed/monzo-bank',                'https://monzo.com/blog',                   'global_fintech', 'RSS', true, '/logos/monzo.png'),
 ('N26',      'N26',      'https://medium.com/feed/n26',                       'https://medium.com/n26',                   'global_fintech', 'RSS', true, '/logos/n26.svg'),
-('Robinhood','Robinhood','https://medium.com/feed/robinhood-engineering',     'https://medium.com/robinhood-engineering',  'global_fintech', 'RSS', true, '/logos/robinhood.svg'),
+('Robinhood','Robinhood','https://medium.com/feed/robinhood-engineering',     'https://medium.com/robinhood-engineering',  'global_fintech', 'RSS', true, '/logos/robinhood.png'),
 ('Block',    'Block',    'https://developer.squareup.com/blog/feed/',         'https://developer.squareup.com/blog',      'global_fintech', 'RSS', true, '/logos/block.svg'),
 ('Brex',     'Brex',     'https://medium.com/feed/brex-tech',                 'https://medium.com/brex-tech',             'global_fintech', 'RSS', true, '/logos/brex.svg'),
-('Coinbase', 'Coinbase', 'https://blog.coinbase.com/feed',                   'https://blog.coinbase.com',                'crypto',         'RSS', true, '/logos/coinbase.svg'),
+('Coinbase', 'Coinbase', 'https://blog.coinbase.com/feed',                   'https://blog.coinbase.com',                'crypto',         'RSS', true, '/logos/coinbase.png'),
 
 -- 국내 핀테크 추가
 ('핀다', 'Finda', 'https://medium.com/feed/finda-tech', 'https://medium.com/finda-tech', 'domestic_fintech', 'RSS', true, '/logos/finda.svg')
@@ -59,6 +59,11 @@ UPDATE companies SET color = '#3AB44A' WHERE name_en = 'Block';
 UPDATE companies SET color = '#F26B21' WHERE name_en = 'Brex';
 UPDATE companies SET color = '#0052FF' WHERE name_en = 'Coinbase';
 UPDATE companies SET color = '#FF4E50' WHERE name_en = 'Finda';
+
+-- 로고 파일명 수정 (INSERT ON CONFLICT DO NOTHING으로 기존 행 미반영분 보정, 재실행 안전)
+UPDATE companies SET logo_url = '/logos/monzo.png'     WHERE name_en = 'Monzo'    AND (logo_url IS NULL OR logo_url LIKE '%.svg');
+UPDATE companies SET logo_url = '/logos/robinhood.png' WHERE name_en = 'Robinhood' AND (logo_url IS NULL OR logo_url LIKE '%.svg');
+UPDATE companies SET logo_url = '/logos/coinbase.png'  WHERE name_en = 'Coinbase'  AND (logo_url IS NULL OR logo_url LIKE '%.svg');
 
 -- ============================================================
 -- 컬렉션 (테마별 큐레이션)
