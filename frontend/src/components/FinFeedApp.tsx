@@ -31,6 +31,7 @@ import CollectionCard from './CollectionCard';
 import CollectionsSection from './CollectionsSection';
 import GoatLoadingScreen from './GoatLoadingScreen';
 import Thumbnail from './Thumbnail';
+import ThumbnailErrorBoundary from './ThumbnailErrorBoundary';
 import { Ic } from './Icons';
 
 type ViewMode = 'card' | 'gallery' | 'list';
@@ -411,7 +412,9 @@ export default function FinFeedApp() {
                         <div className="hero-right">
                           <div className="hero-thumb">
                             <div className="hero-thumb-frame">
-                              <Thumbnail article={featured} company={fCompany} sector={fSector ?? sectorsWithCounts[0]} />
+                              <ThumbnailErrorBoundary>
+                                <Thumbnail article={featured} company={fCompany} sector={fSector ?? sectorsWithCounts[0]} />
+                              </ThumbnailErrorBoundary>
                             </div>
                             <div className="hero-thumb-cap">
                               <span className="ht-cap-lab">FEATURED</span>

@@ -3,7 +3,7 @@
 > 금융 IT 개발자를 위한 기술 블로그 허브.  
 > 은행 · 증권 · 가상자산 · 핀테크까지, 국내외 금융 IT 블로그를 한 곳에서.
 
-**🌐 [finfeeds.vercel.app](https://finfeeds.vercel.app)** &nbsp;·&nbsp; 20개 회사 · ~460건 아티클 (2026-05 기준)
+**🌐 [finfeeds.vercel.app](https://finfeeds.vercel.app)** &nbsp;·&nbsp; 20개 회사 · ~580건 아티클 (2026-05 기준)
 
 ---
 

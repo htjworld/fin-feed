@@ -266,9 +266,15 @@ public class RssCrawlerService implements BlogCrawler {
     }
 
     // Astro/_astro, Vite/assets 등 빌드 해시 기반 URL은 배포 시마다 변경되어 휘발성으로 간주
+    // Vite/Astro/Next build artifact pattern: filename contains an 8+ char hash segment, e.g. thumb.CU5cbg81_uDX3M.png
+    private static final Pattern VITE_HASH_FILENAME = Pattern.compile(
+            ".*/[^/]+\\.[A-Za-z0-9_-]{8,}\\.(png|jpe?g|webp|gif|svg)(\\?.*)?$"
+    );
+
     private boolean isVolatileThumbnail(String url) {
         if (url == null || url.isBlank()) return false;
-        return url.contains("/_astro/") || url.contains("/assets/");
+        if (url.contains("/_astro/") || url.contains("/assets/") || url.contains("/_next/static/")) return true;
+        return VITE_HASH_FILENAME.matcher(url).matches();
     }
 
     // --- Repair utilities (called directly from CrawlController) ---

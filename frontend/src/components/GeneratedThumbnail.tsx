@@ -29,6 +29,11 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 type Palette = { bg: string; bg2: string; accent: string; text: string; muted: string };
 
+const FALLBACK_PALETTE: Palette = {
+  bg: 'hsl(210,40%,12%)', bg2: 'hsl(210,35%,20%)',
+  accent: 'hsl(210,65%,55%)', text: 'rgba(255,255,255,.95)', muted: 'rgba(255,255,255,.42)',
+};
+
 function makePalette(hex: string, mode: number): Palette {
   const [h, s, l] = hexToHsl(hex);
   const modes: Palette[] = [
@@ -45,7 +50,7 @@ function makePalette(hex: string, mode: number): Palette {
     // 5: warm analogous
     { bg: hsl(h - 22, clamp(s - 5, 25, 68), clamp(l - 16, 16, 38)), bg2: hsl(h - 38, clamp(s - 10, 18, 62), clamp(l - 28, 8, 28)), accent: hsl(h + 18, clamp(s + 22, 60, 100), clamp(l + 12, 50, 74)), text: 'rgba(255,255,255,.95)', muted: 'rgba(255,255,255,.40)' },
   ];
-  return modes[mode % modes.length];
+  return modes[mode % modes.length] ?? FALLBACK_PALETTE;
 }
 
 // ─── Text wrap ────────────────────────────────────────────────────────────────

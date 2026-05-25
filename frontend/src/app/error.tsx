@@ -1,6 +1,6 @@
 'use client';
 
-export default function Error({ reset }: { error: Error; reset: () => void }) {
+export default function Error({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div style={{ margin: 0, background: '#0a0a0a', color: '#e8e5df', fontFamily: 'Georgia, serif', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
       <div style={{ textAlign: 'center' }}>
@@ -10,9 +10,14 @@ export default function Error({ reset }: { error: Error; reset: () => void }) {
         <div style={{ fontSize: 72, fontStyle: 'italic', fontWeight: 400, lineHeight: 1, marginBottom: 24, color: '#e8e5df' }}>
           오류.
         </div>
-        <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#888', marginBottom: 40 }}>
+        <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#888', marginBottom: 16 }}>
           예상치 못한 오류가 발생했습니다.
         </div>
+        {error?.message && (
+          <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#555', marginBottom: 40, maxWidth: 400, wordBreak: 'break-all' }}>
+            {error.message}
+          </div>
+        )}
         <button
           onClick={reset}
           style={{ fontFamily: 'monospace', fontSize: 12, color: '#0046ff', background: 'transparent', border: '1px solid #0046ff', padding: '8px 20px', cursor: 'pointer', letterSpacing: '0.08em' }}

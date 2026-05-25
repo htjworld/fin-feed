@@ -4,6 +4,7 @@ import type { Article } from '@/types';
 import { CATEGORY_BY_ID, SECTOR_BY_ID } from '@/data';
 import { useApp } from '@/context/AppContext';
 import Thumbnail from './Thumbnail';
+import ThumbnailErrorBoundary from './ThumbnailErrorBoundary';
 import { Ic } from './Icons';
 
 type Props = {
@@ -50,7 +51,9 @@ export default function ArticleCard({ article, view = 'grid', query = '', highli
           onClick={() => onRead?.(article.id)}
         />
       )}
-      <Thumbnail article={article} company={company} sector={sector} />
+      <ThumbnailErrorBoundary>
+        <Thumbnail article={article} company={company} sector={sector} />
+      </ThumbnailErrorBoundary>
       <div className="card-body">
         <h3 className="card-title">{highlight(article.title, query)}</h3>
         <p className="card-summary">{highlight(article.summary, query)}</p>
