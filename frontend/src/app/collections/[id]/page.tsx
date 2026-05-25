@@ -3,6 +3,24 @@ import { notFound } from 'next/navigation';
 import { GOAT_COLLECTIONS } from '@/data/goat-collections';
 import GoatCard from '@/components/GoatCard';
 
+async function fetchOGImage(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      next: { revalidate: 86400 },
+      headers: { 'User-Agent': 'FinFeed/1.0 (+https://finfeeds.vercel.app)' },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const m =
+      html.match(/<meta[^>]+property="og:image"\s+content="([^"]+)"/i) ??
+      html.match(/<meta[^>]+content="([^"]+)"\s+property="og:image"/i);
+    return m?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function GoatCollectionPage({
   params,
 }: {
@@ -15,10 +33,12 @@ export default async function GoatCollectionPage({
 
   const collection = GOAT_COLLECTIONS[idx];
 
-  const articlesWithThumbs = collection.articles.map((article) => ({
-    ...article,
-    resolvedThumbUrl: article.thumb_url ?? null,
-  }));
+  const articlesWithThumbs = await Promise.all(
+    collection.articles.map(async (article) => ({
+      ...article,
+      resolvedThumbUrl: article.thumb_url ?? (await fetchOGImage(article.url)),
+    }))
+  );
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--ink)' }}>
