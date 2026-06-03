@@ -134,6 +134,7 @@ POST /api/crawl                      전체 크롤링 트리거 (X-Crawler-Key)
 POST /api/crawl/{companyId}          특정 회사 크롤링
 POST /api/crawl/repair-thumbnails    썸네일 없는 아티클 OG image backfill
 POST /api/crawl/repair-tags          태그 없는 아티클 키워드 태깅 backfill
+POST /api/crawl/repair-toss-dates    토스 글 발행일 보정 (백필이 수집일로 박은 날짜 → 실제 발행일)
 POST /api/crawl/logos                회사 로고 수집
 ```
 

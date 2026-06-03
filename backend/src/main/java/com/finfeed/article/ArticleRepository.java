@@ -10,6 +10,8 @@ public interface ArticleRepository extends JpaRepository<Article, Long>, Article
 
     boolean existsByCompanyIdAndTitle(Long companyId, String title);
 
+    List<Article> findByCompanyId(Long companyId);
+
     @Query("SELECT a FROM Article a WHERE a.thumbnailUrl IS NULL OR a.thumbnailUrl = '' OR a.thumbnailUrl LIKE '/img/%'")
     List<Article> findArticlesMissingThumbnails();
 }

@@ -69,6 +69,7 @@ public class Article {
 
     public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
     public void setTags(String[] tags) { this.tags = tags; }
+    public void setPublishedAt(LocalDateTime publishedAt) { this.publishedAt = publishedAt; }
 
     public static final class Builder {
         private Company company;

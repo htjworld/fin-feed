@@ -89,4 +89,13 @@ public class CrawlController {
         int added = tossBackfillService.backfill();
         return ResponseEntity.ok(Map.of("articlesAdded", added));
     }
+
+    @PostMapping("/repair-toss-dates")
+    public ResponseEntity<Map<String, Object>> repairTossDates(
+            @RequestHeader("X-Crawler-Key") String key) {
+        if (!apiKey.equals(key)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        int count = tossBackfillService.repairDates();
+        return ResponseEntity.ok(Map.of("repairedDatesCount", count));
+    }
 }
