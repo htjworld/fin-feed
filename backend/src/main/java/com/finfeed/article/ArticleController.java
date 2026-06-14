@@ -20,6 +20,8 @@ public class ArticleController {
         this.articleService = articleService;
     }
 
+    // TODO: 부하테스트 후 제거 - 병목 검증 대상 엔드포인트
+    // ⚠️ 캐시 미적용 + 매 요청 COUNT(*) DB 조회. 부하테스트 시나리오 비중 ↑ 예정.
     @GetMapping("/count")
     public ResponseEntity<Map<String, Long>> getArticleCount() {
         return ResponseEntity.ok(Map.of("count", articleService.countAll()));

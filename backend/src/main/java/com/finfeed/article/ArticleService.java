@@ -4,6 +4,7 @@ import com.finfeed.article.dto.ArticleFilter;
 import com.finfeed.article.dto.ArticlePageResponse;
 import com.finfeed.article.dto.ArticleResponse;
 import com.finfeed.article.dto.CursorPage;
+import com.finfeed.web.CacheTrace;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ public class ArticleService {
 
     @Cacheable(cacheNames = "articles", key = "#filter")
     public ArticlePageResponse findArticles(ArticleFilter filter) {
+        CacheTrace.markMiss(); // 본문 실행 = 캐시 MISS (HIT 시 호출 안 됨)
         CursorPage cursor = CursorPage.decode(filter.cursor());
         List<Article> fetched = articleRepository.findWithFilter(filter, cursor);
 
