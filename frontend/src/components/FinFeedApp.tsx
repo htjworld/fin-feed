@@ -35,6 +35,18 @@ import ThumbnailErrorBoundary from './ThumbnailErrorBoundary';
 import { Ic } from './Icons';
 
 type ViewMode = 'card' | 'gallery' | 'list';
+const PAGE_SIZE = 30;
+const IDLE_WAKE_THRESHOLD_MS = 12 * 60 * 1000;
+const WAKE_THROTTLE_MS = 60 * 1000;
+
+function mergeArticles(primary: Article[], secondary: Article[]): Article[] {
+  const seen = new Set<number>();
+  return [...primary, ...secondary].filter((article) => {
+    if (seen.has(article.id)) return false;
+    seen.add(article.id);
+    return true;
+  });
+}
 
 export default function FinFeedApp() {
   const searchParams = useSearchParams();
@@ -100,9 +112,24 @@ export default function FinFeedApp() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [fetchError, setFetchError] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [wakingServer, setWakingServer] = useState(false);
 
   const fetchRef = useRef(0);
+  const refreshRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const articlesRef = useRef<Article[]>([]);
+  const paramsRef = useRef({ sector, company, tag, query });
+  const lastActivityAtRef = useRef(Date.now());
+  const lastWakeAtRef = useRef(0);
+
+  useEffect(() => {
+    articlesRef.current = articles;
+  }, [articles]);
+
+  useEffect(() => {
+    paramsRef.current = { sector, company, tag, query };
+  }, [sector, company, tag, query]);
 
   const companyById = useMemo(
     () => Object.fromEntries(companies.map((c) => [c.id, c])),
@@ -117,14 +144,23 @@ export default function FinFeedApp() {
     return SECTORS.map((s) => ({ ...s, count: s.id === 'all' ? totalCount : (counts[s.id] ?? 0) }));
   }, [companies, totalCount]);
 
-  useEffect(() => {
+  const refreshSidebarData = useCallback(() => {
     fetchCompanies().then(setCompanies).catch(console.error);
     fetchArticleCount().then(setDbArticleCount).catch(console.error);
   }, []);
 
+  useEffect(() => {
+    refreshSidebarData();
+  }, [refreshSidebarData]);
+
   const doFetch = useCallback(async (reset: boolean, currentCursor: string | null) => {
     const id = ++fetchRef.current;
-    if (reset) setFetchError(false);
+    if (reset) {
+      setFetchError(false);
+      setLoadMoreError(false);
+    } else {
+      setLoadMoreError(false);
+    }
     reset ? setLoading(true) : setLoadingMore(true);
 
     try {
@@ -134,15 +170,17 @@ export default function FinFeedApp() {
         q: query || undefined,
         tag: tag || undefined,
         cursor: reset ? undefined : currentCursor ?? undefined,
-        size: 30,
+        size: PAGE_SIZE,
       });
       if (fetchRef.current !== id) return;
-      setArticles((prev) => reset ? result.articles : [...prev, ...result.articles]);
+      setArticles((prev) => reset ? result.articles : mergeArticles(prev, result.articles));
       setCursor(result.nextCursor);
       setHasNext(result.hasNext);
     } catch (e) {
       console.error(e);
-      if (fetchRef.current === id) setFetchError(true);
+      if (fetchRef.current === id) {
+        reset ? setFetchError(true) : setLoadMoreError(true);
+      }
     } finally {
       if (fetchRef.current === id) {
         setLoading(false);
@@ -151,9 +189,79 @@ export default function FinFeedApp() {
     }
   }, [sector, company, tag, query]);
 
+  const refreshFirstPage = useCallback(async () => {
+    const id = ++refreshRef.current;
+    const params = { sector, company, tag, query };
+    setWakingServer(true);
+
+    try {
+      const result = await fetchArticles({
+        sector,
+        companyId: company || undefined,
+        q: query || undefined,
+        tag: tag || undefined,
+        size: PAGE_SIZE,
+      });
+      const current = paramsRef.current;
+      if (
+        refreshRef.current !== id ||
+        current.sector !== params.sector ||
+        current.company !== params.company ||
+        current.tag !== params.tag ||
+        current.query !== params.query
+      ) {
+        return;
+      }
+
+      const hadArticles = articlesRef.current.length > 0;
+      setArticles((prev) => hadArticles ? mergeArticles(result.articles, prev) : result.articles);
+      if (!hadArticles) {
+        setCursor(result.nextCursor);
+        setHasNext(result.hasNext);
+        setFetchError(false);
+      }
+    } catch (e) {
+      console.error(e);
+      if (refreshRef.current === id && articlesRef.current.length === 0) {
+        setFetchError(true);
+      }
+    } finally {
+      if (refreshRef.current === id) setWakingServer(false);
+    }
+  }, [sector, company, tag, query]);
+
   useEffect(() => {
     doFetch(true, null);
   }, [doFetch]);
+
+  useEffect(() => {
+    const refreshAfterIdle = () => {
+      const now = Date.now();
+      const idleMs = now - lastActivityAtRef.current;
+      lastActivityAtRef.current = now;
+      if (document.visibilityState !== 'visible') return;
+      if (idleMs < IDLE_WAKE_THRESHOLD_MS || now - lastWakeAtRef.current < WAKE_THROTTLE_MS) return;
+
+      lastWakeAtRef.current = now;
+      refreshSidebarData();
+      void refreshFirstPage();
+    };
+
+    document.addEventListener('visibilitychange', refreshAfterIdle);
+    window.addEventListener('focus', refreshAfterIdle);
+    window.addEventListener('pointerdown', refreshAfterIdle);
+    window.addEventListener('keydown', refreshAfterIdle);
+    window.addEventListener('wheel', refreshAfterIdle, { passive: true });
+    window.addEventListener('touchstart', refreshAfterIdle, { passive: true });
+    return () => {
+      document.removeEventListener('visibilitychange', refreshAfterIdle);
+      window.removeEventListener('focus', refreshAfterIdle);
+      window.removeEventListener('pointerdown', refreshAfterIdle);
+      window.removeEventListener('keydown', refreshAfterIdle);
+      window.removeEventListener('wheel', refreshAfterIdle);
+      window.removeEventListener('touchstart', refreshAfterIdle);
+    };
+  }, [refreshFirstPage, refreshSidebarData]);
 
   // Trigger fade-out animation when loading completes
   useEffect(() => {
@@ -173,12 +281,16 @@ export default function FinFeedApp() {
     const el = sentinelRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting && hasNext && !loadingMore && !loading) doFetch(false, cursor); },
+      ([entry]) => {
+        if (entry.isIntersecting && hasNext && !loadingMore && !loading && !loadMoreError) {
+          doFetch(false, cursor);
+        }
+      },
       { rootMargin: '200px' }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasNext, loadingMore, loading, cursor, doFetch]);
+  }, [hasNext, loadingMore, loading, loadMoreError, cursor, doFetch]);
 
   const isSearch = query.length > 0;
   const isFiltered =
@@ -349,6 +461,21 @@ export default function FinFeedApp() {
                   <div className="content-fade-in">
                     <ActiveFilters filters={filters} setFilters={setFilters} query={query} setQuery={setQuery} />
 
+                    {wakingServer && !loading && (
+                      <div style={{
+                        margin: '0 0 16px',
+                        padding: '10px 12px',
+                        border: '1px solid var(--line)',
+                        borderRadius: 'var(--radius)',
+                        background: 'var(--surface)',
+                        color: 'var(--ink-3)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11.5,
+                      }}>
+                        서버를 다시 깨우고 최신 글을 확인하는 중...
+                      </div>
+                    )}
+
                     {activeCollection && (
                       <div className="coll-header" style={{ '--coll-accent': activeCollection.accent } as React.CSSProperties}>
                         <div>
@@ -509,7 +636,29 @@ export default function FinFeedApp() {
                     <div ref={sentinelRef} style={{ height: 1 }} />
                     {loadingMore && (
                       <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--ink-4)', fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>
-                        LOADING…
+                        서버를 깨우며 다음 글을 불러오는 중...
+                      </div>
+                    )}
+
+                    {loadMoreError && displayed.length > 0 && (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: 12,
+                        margin: '24px 0',
+                        color: 'var(--ink-3)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11.5,
+                      }}>
+                        <span>서버 연결이 잠시 끊겼습니다.</span>
+                        <button
+                          className="hbtn"
+                          onClick={() => doFetch(false, cursor)}
+                          style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5 }}
+                        >
+                          이어서 불러오기
+                        </button>
                       </div>
                     )}
 

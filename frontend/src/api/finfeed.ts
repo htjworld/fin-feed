@@ -1,6 +1,18 @@
 import type { Article, Company } from '@/types';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+const REQUEST_TIMEOUT_MS = 75_000;
+const COLD_START_RETRY_DELAYS = [1_000, 2_000, 4_000, 8_000, 12_000, 18_000, 25_000];
+
+class ApiHttpError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message);
+    this.name = 'ApiHttpError';
+  }
+}
 
 interface ApiCompany {
   id: number;
@@ -36,6 +48,55 @@ interface ApiPageResponse {
   articles: ApiArticle[];
   nextCursor: string | null;
   hasNext: boolean;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function shouldRetry(error: unknown): boolean {
+  if (error instanceof ApiHttpError) {
+    return error.status === 408 || error.status === 429 || error.status >= 500;
+  }
+  return true;
+}
+
+async function fetchJson<T>(path: string): Promise<T> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= COLD_START_RETRY_DELAYS.length; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    try {
+      const res = await fetch(`${BASE}${path}`, {
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        throw new ApiHttpError(`${path} API ${res.status}`, res.status);
+      }
+
+      const contentType = res.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json') && !contentType.includes('+json')) {
+        throw new Error(`${path} API returned ${contentType || 'non-json'}`);
+      }
+
+      return await res.json() as T;
+    } catch (error) {
+      lastError = error;
+      if (!shouldRetry(error) || attempt === COLD_START_RETRY_DELAYS.length) {
+        break;
+      }
+      await sleep(COLD_START_RETRY_DELAYS[attempt]);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(`${path} API request failed`);
 }
 
 function estimateRead(summary: string | null): string {
@@ -95,9 +156,7 @@ export async function fetchArticles(params: FetchArticlesParams = {}): Promise<A
   if (params.cursor) sp.set('cursor', params.cursor);
   sp.set('size', String(params.size ?? 30));
 
-  const res = await fetch(`${BASE}/api/articles?${sp}`);
-  if (!res.ok) throw new Error(`articles API ${res.status}`);
-  const data: ApiPageResponse = await res.json();
+  const data = await fetchJson<ApiPageResponse>(`/api/articles?${sp}`);
   return {
     articles: data.articles.map(toArticle),
     nextCursor: data.nextCursor,
@@ -106,16 +165,12 @@ export async function fetchArticles(params: FetchArticlesParams = {}): Promise<A
 }
 
 export async function fetchArticleCount(): Promise<number> {
-  const res = await fetch(`${BASE}/api/articles/count`);
-  if (!res.ok) throw new Error(`articles/count API ${res.status}`);
-  const data: { count: number } = await res.json();
+  const data = await fetchJson<{ count: number }>('/api/articles/count');
   return data.count;
 }
 
 export async function fetchCompanies(): Promise<Company[]> {
-  const res = await fetch(`${BASE}/api/companies`);
-  if (!res.ok) throw new Error(`companies API ${res.status}`);
-  const data: ApiCompany[] = await res.json();
+  const data = await fetchJson<ApiCompany[]>('/api/companies');
   return data.map(toCompany);
 }
 
