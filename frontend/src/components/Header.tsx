@@ -120,7 +120,6 @@ export default function Header({ query, setQuery, onSelect, onReset, onFilterOpe
         </button>
         <button className="hbtn desktop-only"><Ic.rss /></button>
         <button className="hbtn desktop-only"><Ic.bell /></button>
-        <button className="hbtn primary desktop-only">로그인</button>
       </div>
     </header>
   );
