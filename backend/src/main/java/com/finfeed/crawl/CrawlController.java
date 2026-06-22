@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @RestController
 @RequestMapping("/api/crawl")
@@ -20,6 +21,7 @@ public class CrawlController {
     // 전체 크롤링은 회사 수·페이지 수에 따라 수 분 이상 걸릴 수 있어, HTTP 요청 스레드를 막지 않고
     // 백그라운드에서 순차 실행한다 (GitHub Actions의 curl --max-time 타임아웃 방지)
     private final ExecutorService crawlExecutor = Executors.newSingleThreadExecutor();
+    private final AtomicBoolean crawlInProgress = new AtomicBoolean(false);
 
     private final CrawlingService crawlingService;
     private final LogoCrawlerService logoCrawlerService;
@@ -43,6 +45,9 @@ public class CrawlController {
     public ResponseEntity<Map<String, Object>> crawlAll(
             @RequestHeader("X-Crawler-Key") String key) {
         if (!apiKey.equals(key)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!crawlInProgress.compareAndSet(false, true)) {
+            return ResponseEntity.accepted().body(Map.of("status", "already_running"));
+        }
 
         crawlExecutor.execute(() -> {
             try {
@@ -50,6 +55,8 @@ public class CrawlController {
                 log.info("전체 크롤링 완료: 추가 {}건, 실패 {}건", summary.articlesAdded(), summary.failures());
             } catch (Exception e) {
                 log.error("전체 크롤링 중 오류 발생", e);
+            } finally {
+                crawlInProgress.set(false);
             }
         });
         return ResponseEntity.accepted().body(Map.of("status", "triggered"));
