@@ -11,10 +11,12 @@ jobs:
     steps:
       - name: Trigger crawl
         run: |
+          # Render 무료 티어는 ~15분 미사용 시 슬립 상태로 전환되고,
+          # 콜드 스타트 응답까지 실측 70초가 걸림 (6시간 주기 스케줄러는 매번 슬립 상태에서 깨움) -> 충분한 max-time 필요
           response=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST "${{ secrets.BACKEND_URL }}/api/crawl" \
             -H "X-Crawler-Key: ${{ secrets.CRAWLER_API_KEY }}" \
-            --max-time 30)
+            --max-time 150 --retry 2 --retry-delay 10 --retry-all-errors)
           echo "HTTP status: $response"
           if [ "$response" != "202" ]; then
             echo "Crawl trigger failed with status $response"
