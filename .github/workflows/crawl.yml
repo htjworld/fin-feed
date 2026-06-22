@@ -14,9 +14,9 @@ jobs:
           response=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST "${{ secrets.BACKEND_URL }}/api/crawl" \
             -H "X-Crawler-Key: ${{ secrets.CRAWLER_API_KEY }}" \
-            --max-time 300)
+            --max-time 30)
           echo "HTTP status: $response"
-          if [ "$response" != "200" ]; then
-            echo "Crawl failed with status $response"
+          if [ "$response" != "202" ]; then
+            echo "Crawl trigger failed with status $response"
             exit 1
           fi

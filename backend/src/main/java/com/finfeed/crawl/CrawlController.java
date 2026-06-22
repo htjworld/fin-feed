@@ -1,15 +1,25 @@
 package com.finfeed.crawl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @RestController
 @RequestMapping("/api/crawl")
 public class CrawlController {
+
+    private static final Logger log = LoggerFactory.getLogger(CrawlController.class);
+
+    // 전체 크롤링은 회사 수·페이지 수에 따라 수 분 이상 걸릴 수 있어, HTTP 요청 스레드를 막지 않고
+    // 백그라운드에서 순차 실행한다 (GitHub Actions의 curl --max-time 타임아웃 방지)
+    private final ExecutorService crawlExecutor = Executors.newSingleThreadExecutor();
 
     private final CrawlingService crawlingService;
     private final LogoCrawlerService logoCrawlerService;
@@ -34,11 +44,15 @@ public class CrawlController {
             @RequestHeader("X-Crawler-Key") String key) {
         if (!apiKey.equals(key)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        CrawlSummary summary = crawlingService.crawlAll();
-        return ResponseEntity.ok(Map.of(
-                "articlesAdded", summary.articlesAdded(),
-                "failures", summary.failures()
-        ));
+        crawlExecutor.execute(() -> {
+            try {
+                CrawlSummary summary = crawlingService.crawlAll();
+                log.info("전체 크롤링 완료: 추가 {}건, 실패 {}건", summary.articlesAdded(), summary.failures());
+            } catch (Exception e) {
+                log.error("전체 크롤링 중 오류 발생", e);
+            }
+        });
+        return ResponseEntity.accepted().body(Map.of("status", "triggered"));
     }
 
     @PostMapping("/{companyId}")
