@@ -7,6 +7,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +18,8 @@ import java.util.List;
 
 @Service
 public class SelectorBlogCrawlerService implements BlogCrawler {
+
+    private static final Logger log = LoggerFactory.getLogger(SelectorBlogCrawlerService.class);
 
     private static final int TIMEOUT_MS = 10_000;
     private static final String USER_AGENT =
@@ -44,7 +48,7 @@ public class SelectorBlogCrawlerService implements BlogCrawler {
         ParsingSelector selector = parsingSelectorRepository.findByCompanyId(company.getId()).orElse(null);
         if (selector == null) return CrawlSummary.ZERO;
 
-        CrawlLog log = CrawlLog.start(company);
+        CrawlLog crawlLog = CrawlLog.start(company);
         try {
             List<ArticleInfo> articles = crawlPage(selector.getBlogUrl(), selector);
             int added = 0;
@@ -55,12 +59,14 @@ public class SelectorBlogCrawlerService implements BlogCrawler {
                     || "URL_PARAMETER".equals(selector.getPaginationType())) {
                 added += crawlAdditionalPages(company, selector);
             }
-            log.succeed(added);
-            crawlLogRepository.save(log);
+            crawlLog.succeed(added);
+            crawlLogRepository.save(crawlLog);
             return new CrawlSummary(added, 0);
         } catch (Exception e) {
-            log.fail(e.getMessage());
-            crawlLogRepository.save(log);
+            log.error("[{}] CSS Selector 크롤링 실패 (blogUrl={}): {}",
+                    company.getNameEn(), selector.getBlogUrl(), e.getMessage(), e);
+            crawlLog.fail(e.getMessage());
+            crawlLogRepository.save(crawlLog);
             return new CrawlSummary(0, 1);
         }
     }
@@ -74,6 +80,8 @@ public class SelectorBlogCrawlerService implements BlogCrawler {
                     .get();
             return parseArticles(doc, selector, url);
         } catch (Exception e) {
+            // 페이지 fetch 실패 시 빈 결과로 크롤링이 0건 "성공"처럼 보일 수 있어 반드시 기록
+            log.warn("CSS Selector 페이지 fetch 실패 (url={}): {}", url, e.getMessage(), e);
             return List.of();
         }
     }
@@ -130,7 +138,10 @@ public class SelectorBlogCrawlerService implements BlogCrawler {
             try {
                 java.net.URI base = new java.net.URI(baseUrl);
                 return base.getScheme() + "://" + base.getHost() + href;
-            } catch (Exception e) { return href; }
+            } catch (Exception e) {
+                log.warn("링크 절대경로 변환 실패 (href={}, baseUrl={}): {}", href, baseUrl, e.getMessage(), e);
+                return href;
+            }
         }
         return href;
     }

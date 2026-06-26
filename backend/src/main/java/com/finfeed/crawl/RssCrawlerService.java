@@ -62,19 +62,21 @@ public class RssCrawlerService implements BlogCrawler {
     @Transactional
     public CrawlSummary crawl(Company company) {
         if (company.getRssUrl() == null) return CrawlSummary.ZERO;
-        CrawlLog log = CrawlLog.start(company);
+        CrawlLog crawlLog = CrawlLog.start(company);
         try {
             SyndFeed feed = fetchFeed(company.getRssUrl());
             int added = 0;
             for (SyndEntry entry : feed.getEntries()) {
                 if (saveArticle(company, entry)) added++;
             }
-            log.succeed(added);
-            crawlLogRepository.save(log);
+            crawlLog.succeed(added);
+            crawlLogRepository.save(crawlLog);
             return new CrawlSummary(added, 0);
         } catch (Exception e) {
-            log.fail(e.getMessage());
-            crawlLogRepository.save(log);
+            log.error("[{}] RSS 크롤링 실패 (url={}): {}",
+                    company.getNameEn(), company.getRssUrl(), e.getMessage(), e);
+            crawlLog.fail(e.getMessage());
+            crawlLogRepository.save(crawlLog);
             return new CrawlSummary(0, 1);
         }
     }
@@ -226,7 +228,10 @@ public class RssCrawlerService implements BlogCrawler {
                 String src = firstImg.absUrl("src");
                 if (src.startsWith("http")) return src;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            // 썸네일 보강은 부가 작업이라 크롤링 자체는 실패시키지 않되, 원인은 남긴다
+            log.warn("HTML 썸네일 추출 실패 (url={}): {}", url, e.getMessage(), e);
+        }
         return null;
     }
 
@@ -245,7 +250,9 @@ public class RssCrawlerService implements BlogCrawler {
                 String img = m.group();
                 if (!img.contains("32:32")) return img;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.warn("Jina 썸네일 추출 실패 (url={}): {}", url, e.getMessage(), e);
+        }
         return null;
     }
 
@@ -255,7 +262,10 @@ public class RssCrawlerService implements BlogCrawler {
         try {
             URI base = URI.create(pageUrl);
             return base.getScheme() + "://" + base.getHost() + (imageUrl.startsWith("/") ? imageUrl : "/" + imageUrl);
-        } catch (Exception ignored) { return imageUrl; }
+        } catch (Exception e) {
+            log.warn("이미지 URL 정규화 실패 (imageUrl={}, pageUrl={}): {}", imageUrl, pageUrl, e.getMessage(), e);
+            return imageUrl;
+        }
     }
 
     private boolean isUsableImage(String url) {

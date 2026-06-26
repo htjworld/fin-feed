@@ -6,6 +6,8 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,8 @@ import java.util.Map;
 
 @Service
 public class LogoCrawlerService {
+
+    private static final Logger log = LoggerFactory.getLogger(LogoCrawlerService.class);
 
     private static final Map<String, String> CURATED_LOGOS = Map.ofEntries(
             Map.entry("toss",        "https://logo.clearbit.com/toss.im"),
@@ -97,10 +101,17 @@ public class LogoCrawlerService {
                     ext = resolveExt(response.contentType(), candidate);
                     break;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                // 후보 URL은 여러 개를 순차 시도하므로 개별 실패는 DEBUG, 다음 후보로 진행
+                log.debug("[{}] 로고 후보 다운로드 실패 (candidate={}): {}",
+                        company.getNameEn(), candidate, e.getMessage(), e);
+            }
         }
 
-        if (bytes == null) return false;
+        if (bytes == null) {
+            log.warn("[{}] 로고 다운로드 실패 — 모든 후보 URL 실패", company.getNameEn());
+            return false;
+        }
 
         try {
             String filename = slug + "." + ext;
@@ -114,6 +125,8 @@ public class LogoCrawlerService {
             companyRepository.save(company);
             return true;
         } catch (Exception e) {
+            log.error("[{}] 로고 파일 저장 실패 (sourceUrl={}): {}",
+                    company.getNameEn(), sourceUrl, e.getMessage(), e);
             return false;
         }
     }
@@ -128,7 +141,9 @@ public class LogoCrawlerService {
                     .get();
             Element icon = doc.selectFirst("link[rel=apple-touch-icon]");
             if (icon != null) return icon.absUrl("href");
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.debug("사이트 로고 탐색 실패 (siteUrl={}): {}", siteUrl, e.getMessage(), e);
+        }
         return null;
     }
 

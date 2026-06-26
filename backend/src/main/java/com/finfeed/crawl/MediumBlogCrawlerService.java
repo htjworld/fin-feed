@@ -14,6 +14,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,8 @@ import java.util.List;
 
 @Service
 public class MediumBlogCrawlerService implements BlogCrawler {
+
+    private static final Logger log = LoggerFactory.getLogger(MediumBlogCrawlerService.class);
 
     private static final int TIMEOUT_MS = 15_000;
     private static final String USER_AGENT =
@@ -54,19 +58,21 @@ public class MediumBlogCrawlerService implements BlogCrawler {
         String blogUrl = company.getBlogUrl();
         if (blogUrl == null || blogUrl.isBlank()) return CrawlSummary.ZERO;
 
-        CrawlLog log = CrawlLog.start(company);
+        CrawlLog crawlLog = CrawlLog.start(company);
         try {
             List<ArticleInfo> articles = fetchArticles(blogUrl);
             int added = 0;
             for (ArticleInfo info : articles) {
                 if (saveArticle(company, info)) added++;
             }
-            log.succeed(added);
-            crawlLogRepository.save(log);
+            crawlLog.succeed(added);
+            crawlLogRepository.save(crawlLog);
             return new CrawlSummary(added, 0);
         } catch (Exception e) {
-            log.fail(e.getMessage());
-            crawlLogRepository.save(log);
+            log.error("[{}] Medium 크롤링 실패 (blogUrl={}): {}",
+                    company.getNameEn(), blogUrl, e.getMessage(), e);
+            crawlLog.fail(e.getMessage());
+            crawlLogRepository.save(crawlLog);
             return new CrawlSummary(0, 1);
         }
     }
@@ -86,6 +92,7 @@ public class MediumBlogCrawlerService implements BlogCrawler {
             if (!"medium.com".equals(uri.getHost())) return null;
             return "https://medium.com/feed" + uri.getRawPath();
         } catch (Exception e) {
+            log.warn("Medium 피드 URL 생성 실패 (blogUrl={}): {}", blogUrl, e.getMessage(), e);
             return null;
         }
     }
@@ -100,6 +107,8 @@ public class MediumBlogCrawlerService implements BlogCrawler {
             }
             return articles;
         } catch (Exception e) {
+            // RSS 실패 시 Apollo state 파싱으로 폴백되므로 WARN — 빈 결과가 조용히 넘어가지 않도록 기록
+            log.warn("Medium RSS 파싱 실패 → Apollo state 폴백 (feedUrl={}): {}", feedUrl, e.getMessage(), e);
             return List.of();
         }
     }
@@ -121,7 +130,9 @@ public class MediumBlogCrawlerService implements BlogCrawler {
                 if (start < 0 || end < 0) continue;
                 return parseApolloState(data.substring(start, end + 1));
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.warn("Medium Apollo state fetch 실패 (blogUrl={}): {}", blogUrl, e.getMessage(), e);
+        }
         return List.of();
     }
 
@@ -159,7 +170,9 @@ public class MediumBlogCrawlerService implements BlogCrawler {
 
                 articles.add(new ArticleInfo(mediumUrl, title, summary, thumbnail, publishedAt, new String[0]));
             });
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.warn("Medium Apollo state JSON 파싱 실패: {}", e.getMessage(), e);
+        }
         return articles;
     }
 
